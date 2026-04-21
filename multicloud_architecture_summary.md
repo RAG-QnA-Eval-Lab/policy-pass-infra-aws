@@ -268,18 +268,17 @@ AWS는 **Online Serving Layer**로 정의한다.
 
 ### 분리 이유
 
-GCP 데이터 파이프라인과 AWS 서빙은 변경 주기와 담당자가 다르다. 하나의 repo에 두면 파이프라인 수정과 서빙 코드 수정이 서로 충돌할 수 있고, CI/CD 경로 필터가 복잡해진다.
+GCP 데이터 파이프라인, AWS 인프라, AWS 서빙 애플리케이션은 각각 변경 주기와 담당자가 다르다. 역할별로 repo를 분리하면 CI/CD 충돌을 방지하고 책임 경계가 명확해진다.
 
-### Repo 구조
+### Repo 구조 (3-repo)
 
 | Repo | 담당자 | 내용 |
 |------|--------|------|
-| `RAG-QA-pipeline-GCP` (현재) | 본인 | GCP 데이터 파이프라인 전체 (수집, 청킹, 임베딩, FAISS 빌드, GCS, MongoDB) |
-| `RAG-QA-serving-AWS` (신규) | 본인(인프라) + 팀원(코드) | AWS 서빙 인프라 + 애플리케이션 코드 |
+| `RAG-QA-pipeline-GCP` (현재) | 본인 | GCP 데이터 파이프라인 전체 (수집, 청킹, 임베딩, FAISS 빌드, GCS, MongoDB) + GCP BE/FE |
+| `RAG-QA-serving-AWS` (신규) | 본인 | AWS 인프라 관리 코드/스크립트 (CI/CD, ECS, ECR, 네트워크 등) |
+| 팀원 repo (별도) | 캡스톤 팀원 | LangChain/RAG 기반 서빙 애플리케이션 코드 |
 
-### `RAG-QA-serving-AWS` repo 구성
-
-**본인이 세팅하는 인프라 부분:**
+### `RAG-QA-serving-AWS` repo 구성 (본인 담당, 인프라 전용)
 
 - `.github/workflows/deploy-api.yml` — ECR + ECS Fargate BE 자동 배포
 - `.github/workflows/deploy-ui.yml` — ECR + ECS Fargate FE 자동 배포
@@ -289,20 +288,20 @@ GCP 데이터 파이프라인과 AWS 서빙은 변경 주기와 담당자가 다
 - `pyproject.toml` — 의존성 정의 (boto3 포함)
 - `.env.example` — 환경변수 문서화
 - GitHub Secrets 등록 (AWS 인증, GCS HMAC 키 등)
+- 네트워크/보안 설정 스크립트
 
-**팀원들이 개발하는 코드 부분:**
+### 팀원 repo (캡스톤 팀원 담당, 애플리케이션 코드)
 
-- `src/api/main.py` + `src/api/routes/` — FastAPI 서빙 로직
-- `src/ui/` — Streamlit 프론트엔드
-- `src/retrieval/` — 검색 파이프라인 (이 repo에서 복사 후 수정 가능)
-- `src/generation/` — 생성 파이프라인 (동일)
-- `src/evaluation/` — 평가 파이프라인
-- `config/` — 설정 파일
+- LangChain 기반 RAG 서빙 로직
+- FastAPI API 서버
+- Streamlit 프론트엔드
+- 프롬프트 엔지니어링
+- 평가 파이프라인 (RAGAS, LLM Judge, DeepEval)
 
 ### FAISS 인덱스 전달 경로
 
 ```
-GCP (이 repo)                          AWS (서빙 repo)
+GCP (이 repo)                          AWS (인프라 repo + 팀원 repo)
 Cloud Run Job → FAISS Build            ECS Container 기동
     ↓                                       ↓
 GCS 업로드                              GCS S3호환 API (boto3 + HMAC)
@@ -310,7 +309,7 @@ GCS 업로드                              GCS S3호환 API (boto3 + HMAC)
 (index/metadata.pkl)                   → RetrievalPipeline 로드
 ```
 
-팀원들은 서빙 repo에 push하면 CI/CD가 자동으로 ECR 빌드 → ECS 배포까지 수행한다.
+본인이 AWS 인프라 repo에서 배포 파이프라인을 세팅하면, 팀원들은 자기 repo에서 앱 코드를 개발하고 CI/CD를 통해 배포한다.
 
 ---
 
@@ -324,6 +323,6 @@ GCS 업로드                              GCS S3호환 API (boto3 + HMAC)
 4. **FAISS build는 GCP, FAISS 2Gi load/search serving은 AWS**
 5. **모니터링은 AWS로 단일화**
 6. **데이터 엔지니어링 담당자는 GCP 파이프라인 + AWS 인프라 뼈대의 owner**
-7. **AWS 서빙 애플리케이션 코드는 캡스톤 팀원들이 개발**
-8. **Repo는 GCP 파이프라인 / AWS 서빙으로 분리**
+7. **AWS 서빙 애플리케이션 코드는 캡스톤 팀원들이 자체 repo에서 개발**
+8. **Repo는 3개로 분리: GCP 파이프라인 / AWS 인프라 / 팀원 앱 코드**
 
