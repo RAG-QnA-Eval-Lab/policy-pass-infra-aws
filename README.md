@@ -10,7 +10,7 @@
 GCP (Offline Pipeline)                    AWS (Online Serving)
 ========================                   ========================
 Data Crawling                              FastAPI Backend (EC2)
-Chunking & Embedding                       Streamlit Frontend (EC2)
+Chunking & Embedding                       Frontend (EC2, React/Vue/TS)
 FAISS Index Build                          FAISS Index Load & Search
 GCS Storage                    ─────>      S3 (via DataSync)
 Airflow Orchestration                      LLM Call & Response
@@ -28,7 +28,7 @@ MongoDB (Metadata)                         Monitoring (Grafana + Prometheus)
 | Service | Resource | Purpose |
 |---------|----------|---------|
 | **EC2** | `policy-pass-api` (t3.medium) | FastAPI backend, FAISS search, LLM call |
-| **EC2** | `policy-pass-ui` (t3.small) | Streamlit frontend |
+| **EC2** | `policy-pass-ui` (t3.small) | Frontend (React/Vue/TS) |
 | **EC2** | `policy-pass-monitor` (t3.small) | Grafana + Prometheus |
 | **ECR** | `rag-api`, `rag-ui` | Docker image registry |
 | **S3** | `rag-qa-index-{ACCOUNT_ID}` | FAISS index storage |
@@ -66,10 +66,12 @@ policy-pass-infra-aws/
 ├── services/
 │   ├── api/
 │   │   ├── Dockerfile              # API container (python:3.11-slim)
+│   │   ├── .env.example            # API env vars (LLM keys, MongoDB, S3)
 │   │   └── requirements.txt        # API dependencies
 │   └── ui/
-│       ├── Dockerfile              # UI container (python:3.11-slim)
-│       └── requirements.txt        # UI dependencies
+│       ├── Dockerfile              # UI container (node:20-alpine)
+│       ├── .env.example            # UI env vars (API URL)
+│       └── package.json            # UI dependencies (React + Vite + TS)
 ├── monitoring/
 │   ├── docker-compose.yml          # Prometheus + Grafana stack
 │   └── prometheus.yml              # Prometheus scrape config
@@ -79,7 +81,7 @@ policy-pass-infra-aws/
 │   ├── team-discussion-items.md
 │   ├── multicloud_architecture_summary.md
 │   └── plan.md
-├── .env.example                    # Environment variable template
+├── .env.example                    # Infra/CI env vars (AWS, EC2, DataSync)
 └── .gitignore
 ```
 
@@ -91,6 +93,7 @@ policy-pass-infra-aws/
 
 - AWS CLI v2 configured (`aws configure`)
 - Docker installed
+- Node.js 20+ (UI build)
 - AWS account with billing enabled (DataSync, EC2 require billing)
 - GCS HMAC keys (for DataSync)
 
@@ -278,7 +281,7 @@ Airflow DAG (02:00 KST)                    EC2 API Container
 
 ### Team Members (Application)
 - FastAPI API development (`src/api/`)
-- Streamlit UI development (`src/ui/`)
+- Frontend development (`src/ui/`, React/Vue/TS)
 - RAG pipeline logic (retrieval, generation)
 - Prompt engineering & evaluation
 
@@ -290,7 +293,7 @@ Airflow DAG (02:00 KST)                    EC2 API Container
 |-----------|-------|---------|
 | `RAG-QA-pipeline-GCP` | Daehyun | GCP offline pipeline (crawling, indexing, Airflow) |
 | `policy-pass-infra-aws` | Daehyun | **This repo** - AWS infrastructure |
-| Team app repo | Team members | Application code (FastAPI + Streamlit) |
+| Team app repo | Team members | Application code (FastAPI + React/Vue/TS) |
 
 ---
 

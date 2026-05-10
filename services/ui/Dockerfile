@@ -1,24 +1,27 @@
-FROM python:3.11-slim
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        curl \
-    && rm -rf /var/lib/apt/lists/*
+COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
+RUN npm ci --ignore-scripts 2>/dev/null \
+    || yarn install --frozen-lockfile 2>/dev/null \
+    || pnpm install --frozen-lockfile 2>/dev/null
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+RUN npm run build
 
-COPY src/__init__.py ./src/__init__.py
-COPY src/ui/ ./src/ui/
+FROM node:20-alpine
 
-EXPOSE 8501
+WORKDIR /app
 
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD curl -f http://localhost:8501/healthz || exit 1
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/public ./public
 
-CMD ["streamlit", "run", "src/ui/app.py", \
-     "--server.port=8501", \
-     "--server.address=0.0.0.0", \
-     "--server.headless=true"]
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD wget -qO- http://localhost:3000/ || exit 1
+
+CMD ["npm", "run", "start"]

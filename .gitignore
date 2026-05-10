@@ -9,6 +9,11 @@ build/
 *.egg
 .eggs/
 
+# Node.js
+node_modules/
+.next/
+.nuxt/
+
 # Virtual environments
 .venv/
 venv/
