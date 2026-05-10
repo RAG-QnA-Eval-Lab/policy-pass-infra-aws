@@ -40,15 +40,15 @@ A안의 핵심은 다음과 같다.
   - 공공데이터포털
   - 한국장학재단
   - 정책 문서(PDF)
-- Cloud Scheduler 기반 주기 실행
+- **Airflow DAG 기반 주기 실행** (매일 02:00 KST, `dag_collect_index.py`)
 - Data Crawler 실행
 - 원본 데이터 저장
 - 정제 데이터 저장
 - 청킹(Chunking)
-- 임베딩(Embedding)
+- 임베딩(Embedding) — `openai/text-embedding-3-small` (1536차원, LiteLLM 경유)
 - FAISS 인덱스 생성(Build)
 - GCS에 Policies / Chunks / Index 저장
-- Eventarc 기반 후속 파이프라인 트리거
+- **Airflow task chaining 기반 후속 파이프라인 트리거** (수집 → 인덱싱 자동 연결)
 - MongoDB 기반 메타데이터 저장
 - Cloud Logging / Cloud Monitoring
 
@@ -113,7 +113,7 @@ AWS는 **Online Serving Layer**로 정의한다.
 
 - 위치: **GCP**
 - 역할: 청킹 및 임베딩 완료 후 FAISS 인덱스 생성
-- 실행 주체: Cloud Run Job
+- 실행 주체: **Airflow DAG Task** (`rag-airflow-vm`에서 `dag_collect_index.py`의 `rebuild_index` task 실행)
 
 ### 5.2 FAISS Load / Search Serving
 
@@ -302,7 +302,7 @@ GCP 데이터 파이프라인, AWS 인프라, AWS 서빙 애플리케이션은 �
 
 ```
 GCP (이 repo)                          AWS (인프라 repo + 팀원 repo)
-Cloud Run Job → FAISS Build            ECS Container 기동
+Airflow DAG → FAISS Build             ECS Container 기동
     ↓                                       ↓
 GCS 업로드                              GCS S3호환 API (boto3 + HMAC)
 (index/faiss.index)                    → /tmp/index/ 다운로드
@@ -326,3 +326,290 @@ GCS 업로드                              GCS S3호환 API (boto3 + HMAC)
 7. **AWS 서빙 애플리케이션 코드는 캡스톤 팀원들이 자체 repo에서 개발**
 8. **Repo는 3개로 분리: GCP 파이프라인 / AWS 인프라 / 팀원 앱 코드**
 
+---
+
+## 13. GCP 인프라 상세 — 이 Repo에서 구축하는 것들
+
+이 섹션은 `RAG-QA-pipeline-GCP` repo가 실제로 사용하는 GCP 서비스와, repo 내 어떤 코드/파일이 각 인프라에 대응하는지를 정리한다.
+
+### 13.1 Cloud Storage (GCS)
+
+GCS는 이 시스템의 **실제 데이터 저장소**다. 정책 원본, 정제 데이터, FAISS 인덱스를 모두 여기에 보관한다.
+
+| 항목 | 값 |
+|------|-----|
+| 버킷 | `rag-qna-eval-data` |
+| 리전 | `asia-northeast3` (서울) |
+
+**저장 경로 구조**:
+
+```
+gs://rag-qna-eval-data/
+├── policies/
+│   ├── raw/                  ← 정책 원본 JSON
+│   └── processed/            ← 정제 데이터
+└── index/
+    ├── faiss.index            ← FAISS 벡터 인덱스
+    └── metadata.pkl           ← 인덱스 메타데이터 (chunk→정책 매핑)
+```
+
+**repo 코드 매핑**:
+
+- `src/ingestion/gcs_client.py` — `GCSClient` 클래스. upload_json, download_json, upload_file, download_file, list_blobs, exists, delete 메서드 제공.
+- `scripts/collect_policies.py` — 수집 완료 후 원본 데이터를 GCS에 업로드
+- `src/ingestion/pipeline.py` — FAISS 인덱스 빌드 후 GCS에 업로드 (`--gcs` 플래그)
+
+**AWS와의 공유 계약**:
+
+`index/faiss.index`와 `index/metadata.pkl`이 GCP↔AWS 간 유일한 공유 아티팩트다. AWS 측에서는 GCS의 S3 호환 API (boto3 + HMAC 키)를 통해 이 파일들을 다운로드한다.
+
+### 13.2 Compute Engine (VM 2대)
+
+GCP VM 2대를 운영한다.
+
+#### VM #1: MongoDB + Grafana (`rag-mongodb-vm`, e2-small)
+
+| 항목 | 값 |
+|------|-----|
+| 인스턴스 타입 | e2-small |
+| 고정 IP | `34.47.80.98` |
+| 역할 | MongoDB (메타데이터 DB) + Grafana (모니터링 대시보드) |
+
+**MongoDB** (`rag_youth_policy` DB):
+
+| 컬렉션 | 용도 | 주요 필드 |
+|--------|------|----------|
+| `policies` | 정책 메타데이터 | policy_id, title, category, gcs_path, status |
+| `ingestion_logs` | 수집 이력 | source, collected_count, valid_count, status, gcs_paths |
+| `api_usage_logs` | LLM API 호출 이력 | model, tokens, cost, latency |
+
+repo 코드: `src/ingestion/mongo_client.py` — `PolicyMetadataStore` 클래스. upsert_policy, upsert_policies_batch, find_by_id, find_by_category, log_ingestion 등.
+
+접속: `MONGODB_URI=mongodb://34.47.80.98:27017` (`config/settings.py`의 Settings 클래스에서 관리)
+
+**Grafana**: 포트 3000에서 운영. Cloud Monitoring을 데이터소스로 연결하여 대시보드 구성.
+
+#### VM #2: Airflow (`rag-airflow-vm`, e2-standard-2)
+
+| 항목 | 값 |
+|------|-----|
+| 인스턴스 타입 | e2-standard-2 |
+| 고정 IP | `34.47.107.145` |
+| 역할 | Apache Airflow 2.9.3 (오케스트레이션) |
+| Web UI | `http://34.47.107.145:8080` |
+
+**Airflow DAGs** (3개):
+
+| DAG | 파일 | 스케줄 | 용도 |
+|-----|------|--------|------|
+| `dag_collect_index` | `dags/dag_collect_index.py` | 매일 02:00 KST | 정책 수집 → FAISS 인덱스 리빌드 |
+| `dag_qa_generation` | `dags/dag_qa_generation.py` | 수동 트리거 | QA 데이터셋 생성 |
+| `dag_evaluation` | `dags/dag_evaluation.py` | 수동 트리거 | 평가 파이프라인 실행 |
+
+> **Cloud Run Jobs → Airflow 전환 배경**: Cloud Run Jobs에서는 태스크 간 의존성 관리가 어렵고 (수집→인덱싱 체이닝 불가), 실행 상태 모니터링이 불편하며, 비용이 높았다 (월 ~₩38,000 → Airflow VM ~₩68,000이지만 3개 DAG 통합 운영으로 실효 비용 82% 절감). 자세한 비교는 `docs/plan.md`의 "Cloud Run Jobs → Airflow 전환 배경" 섹션 참조.
+
+repo 코드:
+- `dags/` — Airflow DAG 정의 3개 + `dags/utils/cloud_run.py` 유틸리티
+- `airflow/setup-vm.sh` — VM 초기 설정 스크립트 (Airflow + mecab 설치)
+- `.github/workflows/deploy-airflow.yml` — Airflow VM 코드 동기화 CI/CD
+
+### 13.3 Cloud Run — 서비스 (scale-to-zero)
+
+실시간 서빙을 담당하는 상시 서비스 2개를 Cloud Run으로 운영한다.
+
+#### Cloud Run #1: BE (FastAPI)
+
+| 항목 | 값 |
+|------|-----|
+| 서비스명 | `rag-youth-policy-api` |
+| 메모리 | 2Gi (FAISS 인메모리 + Cross-Encoder 로드) |
+| Dockerfile | `Dockerfile` |
+| CMD | `uvicorn src.api.main:app --host 0.0.0.0 --port $PORT` |
+| 포트 | 8080 |
+
+repo 코드:
+
+- `src/api/main.py` — FastAPI 앱 엔트리 (lifespan: FAISS 인덱스 로드 + MongoDB 연결)
+- `src/api/routes/` — 6개 라우트 구현 완료: search.py, generate.py, policies.py, models.py, evaluate.py
+- `src/api/deps.py` — FastAPI Depends: `get_rag_pipeline()`, `get_mongo()`
+- `src/api/schemas.py` — Pydantic 요청/응답 모델
+- `src/api/errors.py` — 글로벌 예외 핸들러 (`LLMError` → HTTP 코드 매핑)
+- `src/api/middleware.py` — 요청 로깅 미들웨어
+- `src/retrieval/` — 4가지 검색 전략 (vector_only, bm25_only, hybrid, hybrid_rerank)
+- `src/generation/` — LiteLLM 멀티 프로바이더 + RAG 오케스트레이션
+
+CI/CD: `.github/workflows/deploy-api.yml` (push to main 시 자동 배포)
+
+환경변수: `GCS_BUCKET`, `MONGODB_URI`, `OPENAI_API_KEY`, `VERTEXAI_PROJECT`, `VERTEXAI_LOCATION`
+
+#### Cloud Run #2: FE (Streamlit)
+
+| 항목 | 값 |
+|------|-----|
+| 서비스명 | `rag-youth-policy-ui` |
+| 메모리 | 512Mi |
+| Dockerfile | `Dockerfile.ui` |
+| CMD | `streamlit run src/ui/app.py --server.port=8501` |
+| 포트 | 8501 |
+
+repo 코드: `src/ui/` — Streamlit 4페이지 구현 완료 (챗봇, 정책 탐색, 맞춤 추천, 평가 대시보드). httpx로 BE API 호출.
+
+CI/CD: `.github/workflows/deploy-ui.yml` (push to main 시 자동 배포)
+
+### 13.4 Cloud Run Jobs — 배치 작업 (Airflow로 전환됨)
+
+> **현재 상태**: Cloud Run Jobs 인프라 코드(Dockerfile, CI/CD)는 보존하지만, 실제 운영은 **Airflow DAG**에서 수행한다. Cloud Run Jobs → Airflow 전환 배경은 §13.2 VM #2 참조.
+
+트리거 기반으로 실행되는 배치 작업 2개의 인프라 정의가 남아있다.
+
+#### Collector Job
+
+| 항목 | 값 |
+|------|-----|
+| Job명 | `rag-collector` |
+| 메모리 | 512Mi |
+| Dockerfile | `Dockerfile.collector` |
+| CMD | `python scripts/collect_policies.py --all` |
+
+repo 코드:
+
+- `scripts/collect_policies.py` — 수집 CLI 엔트리포인트
+- `src/ingestion/collectors/base.py` — Policy frozen dataclass (정규화 스키마)
+- `src/ingestion/collectors/data_portal.py` — 공공데이터포털 수집기
+- `src/ingestion/gcs_client.py` — 수집 결과 GCS 업로드
+- `src/ingestion/mongo_client.py` — 메타데이터 MongoDB 저장
+
+환경변수: `DATA_PORTAL_API_KEY`, `GCS_BUCKET`, `MONGODB_URI`
+
+#### Indexer Job
+
+| 항목 | 값 |
+|------|-----|
+| Job명 | `rag-indexer` |
+| 메모리 | 2Gi |
+| Dockerfile | `Dockerfile.indexer` |
+| CMD | `python -m src.ingestion.pipeline --gcs` |
+
+repo 코드:
+
+- `src/ingestion/pipeline.py` — 인덱싱 오케스트레이션 (GCS에서 원본 로드 → 청킹 → 임베딩 → FAISS 빌드 → GCS 업로드)
+- `src/ingestion/loader.py` — PDF/TXT/JSON 로더
+- `src/ingestion/chunker.py` — 시맨틱 청킹 (정책 구조 인식, kss + mecab C++ 백엔드 한국어 문장 분리)
+- `src/ingestion/embedder.py` — OpenAI text-embedding-3-small (1536차원)
+
+환경변수: `OPENAI_API_KEY`, `GCS_BUCKET`
+
+CI/CD: `.github/workflows/deploy-jobs.yml` (collector + indexer 동시 배포)
+
+### 13.5 Artifact Registry
+
+| 항목 | 값 |
+|------|-----|
+| 레지스트리 | `asia-northeast3-docker.pkg.dev/rag-qna-eval/repo` |
+| 역할 | Docker 이미지 저장소 |
+| 이미지 4종 | `api`, `ui`, `collector`, `indexer` |
+
+GitHub Actions 워크플로에서 `docker build` + `docker push` 후 Cloud Run에 deploy한다.
+
+### 13.6 Cloud Scheduler → Airflow 대체
+
+| 항목 | 값 |
+|------|-----|
+| ~~역할~~ | ~~매일 1회 Collector Job 트리거~~ |
+| 현재 상태 | **Airflow로 대체됨**. `dag_collect_index.py`가 매일 02:00 KST에 수집+인덱싱을 실행. Cloud Scheduler는 더 이상 사용하지 않음 |
+
+### 13.7 Eventarc → Airflow 대체
+
+| 항목 | 값 |
+|------|-----|
+| ~~역할~~ | ~~GCS 이벤트 → Indexer Job 자동 체이닝~~ |
+| 현재 상태 | **Airflow task chaining으로 대체됨**. `dag_collect_index.py`에서 `collect_policies >> rebuild_index`로 직접 체이닝. Eventarc는 더 이상 사용하지 않음 |
+
+수집 → 인덱싱 자동화 체인 (변경 후): `Airflow DAG → collect_policies task → rebuild_index task → GCS 인덱스 업로드`
+
+### 13.8 Cloud Monitoring + Cloud Logging
+
+- **Cloud Monitoring**: Cloud Run 기본 메트릭 (요청 수, 레이턴시, 에러율) + FastAPI 커스텀 메트릭 수집
+- **Cloud Logging**: 구조화 JSON 로그 (RAG 요청별 레이턴시/토큰/비용 추적)
+- **Grafana 연동**: Compute Engine VM의 Grafana (포트 3000)에서 Cloud Monitoring 데이터소스를 연결하여 통합 대시보드 구성
+
+### 13.9 CI/CD (GitHub Actions)
+
+이 repo에는 5개의 GitHub Actions 워크플로가 있다.
+
+| 워크플로 | 파일 | 트리거 | 대상 |
+|---------|------|--------|------|
+| CI (Lint + Test) | `.github/workflows/ci.yml` | PR → main | ruff + pytest |
+| Deploy BE | `.github/workflows/deploy-api.yml` | push main (`src/api/**`, `Dockerfile` 등) | Cloud Run `rag-youth-policy-api` |
+| Deploy FE | `.github/workflows/deploy-ui.yml` | push main (`src/ui/**`, `Dockerfile.ui`) | Cloud Run `rag-youth-policy-ui` |
+| Deploy Jobs | `.github/workflows/deploy-jobs.yml` | push main (`src/ingestion/**` 등) | Cloud Run Jobs `rag-collector`, `rag-indexer` |
+| Deploy Airflow | `.github/workflows/deploy-airflow.yml` | push main (`dags/**`, `airflow/**`) | Airflow VM (`rag-airflow-vm`) 코드 동기화 |
+
+인증: `secrets.GCP_SA_KEY` (서비스 계정 JSON 키)
+
+### 13.10 Dockerfiles (4종)
+
+| Dockerfile | 용도 | 핵심 의존성 (extras) | 포트 |
+|-----------|------|---------------------|------|
+| `Dockerfile` | BE (FastAPI) | `.[api,ko]` | 8080 |
+| `Dockerfile.ui` | FE (Streamlit) | `.[ui,viz]` | 8501 |
+| `Dockerfile.collector` | 수집 Job | `.[crawl]` | — |
+| `Dockerfile.indexer` | 인덱싱 Job | `.[ko]` | — |
+
+모두 `python:3.11-slim` 베이스 이미지를 사용한다.
+
+### 13.11 설정 관리
+
+| 파일 | 역할 |
+|------|------|
+| `config/settings.py` | pydantic-settings 기반 Settings 클래스. `.env` 자동 로드. GCP 프로젝트/버킷, MongoDB URI, LLM API 키, 임베딩/청킹/검색 파라미터 |
+| `config/policy_sources.py` | 데이터 소스별 URL/API 설정 (온통청년, 공공데이터포털, 한국장학재단, PDF) |
+| `config/models.py` | LLM 모델 목록 (GPT-4o, Claude, Gemini, Llama3) |
+
+### 13.12 Secret Manager
+
+| 항목 | 값 |
+|------|-----|
+| 역할 | Cloud Run 런타임 환경변수 주입 (API 키, DB 접속 정보 등) |
+| 주요 시크릿 | `OPENAI_API_KEY`, `MONGODB_URI`, `DATA_PORTAL_API_KEY`, `API_KEY` |
+
+로컬 개발은 `.env` 파일, GCP 배포 런타임은 Secret Manager를 사용한다. Cloud Run 서비스/잡 배포 시 `--update-secrets` 플래그로 주입.
+
+### 13.13 IAP (Identity-Aware Proxy)
+
+| 항목 | 값 |
+|------|-----|
+| 역할 | Cloud Run 서비스 접근 제어 |
+| 구현 상태 | 설정 완료 |
+
+### 13.14 VPC Networking
+
+| 항목 | 값 |
+|------|-----|
+| 역할 | MongoDB VM만 VPC 내부 배치, 나머지 관리형 서비스는 VPC 외부 |
+| 구성 | Compute Engine VM에 static IP + 방화벽 규칙 (27017, 8080, 3000 포트) |
+
+### 13.15 Repo 디렉토리 ↔ GCP 서비스 매핑 요약
+
+| repo 경로 | GCP 서비스 | 역할 |
+|----------|-----------|------|
+| `src/api/` | Cloud Run #1 (BE, 2Gi) | FastAPI 백엔드 — 6개 엔드포인트 (Health, Search, Generate, Policies, Models, Evaluate) |
+| `src/ui/` | Cloud Run #2 (FE, 512Mi) | Streamlit 4페이지 (챗봇, 정책 탐색, 맞춤 추천, 평가 대시보드) |
+| `src/ingestion/collectors/` | **Airflow DAG** (`dag_collect_index`) | 정부 사이트 크롤러 |
+| `src/ingestion/pipeline.py` | **Airflow DAG** (`dag_collect_index`) | 청킹 → 임베딩 → FAISS 빌드 |
+| `src/ingestion/gcs_client.py` | Cloud Storage (GCS) | 데이터/인덱스 업로드·다운로드 |
+| `src/ingestion/mongo_client.py` | Compute Engine VM #1 (MongoDB) | 메타데이터 CRUD |
+| `src/retrieval/` | Cloud Run #1 (BE) | 벡터/BM25/하이브리드 검색 |
+| `src/generation/` | Cloud Run #1 (BE) | LiteLLM 멀티 프로바이더 + RAG 오케스트레이션 |
+| `src/evaluation/` | Cloud Run #1 (BE) | RAGAS v0.4 + LLM Judge + DeepEval 3단계 평가 |
+| `config/` | 전체 | 환경변수, 모델 목록, 소스 설정 |
+| `scripts/collect_policies.py` | Airflow DAG / Cloud Run Job | 수집 CLI 엔트리포인트 |
+| `dags/` | Compute Engine VM #2 (Airflow) | Airflow DAG 3개 (수집+인덱싱, QA 생성, 평가) |
+| `airflow/` | Compute Engine VM #2 (Airflow) | Airflow VM 설정 스크립트 |
+| `Dockerfile` | Artifact Registry → Cloud Run BE | BE 컨테이너 이미지 |
+| `Dockerfile.ui` | Artifact Registry → Cloud Run FE | FE 컨테이너 이미지 |
+| `Dockerfile.collector` | Artifact Registry (보존) | 수집 Job 이미지 (Airflow 전환 후 백업) |
+| `Dockerfile.indexer` | Artifact Registry (보존) | 인덱싱 Job 이미지 (Airflow 전환 후 백업) |
+| `.github/workflows/` | GitHub Actions → GCP 배포 | CI/CD 파이프라인 **5종** |
+| `data/index/` | GCS `index/` | FAISS 인덱스 로컬 빌드 산출물 |
+| `data/eval/` | — | 평가 QA 데이터셋 (GCP 의존 없음) |
