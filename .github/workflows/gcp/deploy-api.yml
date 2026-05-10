@@ -1,0 +1,55 @@
+name: Deploy BE (FastAPI)
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/api/**"
+      - "src/retrieval/**"
+      - "src/generation/**"
+      - "config/**"
+      - "Dockerfile"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: rag-qna-eval
+  REGION: asia-northeast3
+  REGISTRY: asia-northeast3-docker.pkg.dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+      - uses: docker/setup-buildx-action@v3
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/repo/api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+      - name: Deploy API service
+        run: |
+          gcloud run deploy rag-youth-policy-api \
+            --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/repo/api:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --memory 2Gi \
+            --cpu 1 \
+            --timeout 300 \
+            --min-instances 0 \
+            --max-instances 1 \
+            --service-account sa-rag-api@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --set-env-vars "ENVIRONMENT=production,ENABLE_CLOUD_MONITORING=true,GCS_BUCKET=rag-qna-eval-data,INDEX_GCS_PREFIX=index,EMBEDDING_MODEL=openai/text-embedding-3-small,EMBEDDING_DIM=1536,VERTEXAI_PROJECT=rag-qna-eval,VERTEXAI_LOCATION=asia-northeast3" \
+            --update-secrets "MONGODB_URI=mongodb-uri:latest,OPENAI_API_KEY=openai-api-key:latest,HUGGINGFACE_API_KEY=huggingface-api-key:latest,API_KEY=api-key:latest"

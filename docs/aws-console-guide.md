@@ -301,8 +301,8 @@ docker push {ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/rag-ui:initial
 
 ## Phase D: EC2 인스턴스 생성
 
-> **비용**: t2.micro 무료 티어 750시간/월. 인스턴스 2개 운영 시 약 $8/월 추가 발생.  
-> 크레딧 잔액으로 충분히 커버 가능.
+> **인스턴스 구성**: API(t3.medium), UI(t3.small), 모니터링(t3.small) 총 3대  
+> **비용**: 카드 등록 후 플랜 업그레이드 필요. 팀 회의 후 진행.
 
 ### D-0. 키 페어 생성
 
@@ -350,6 +350,20 @@ chmod 400 ~/Downloads/policy-pass-key.pem
 
 11. **보안 그룹 생성**
 
+#### 보안 그룹 3: 모니터링 서버용
+
+12. 보안 그룹 이름: `policy-pass-monitor-sg`
+13. 설명: `Policy Pass monitoring server`
+14. 인바운드 규칙 추가:
+
+| 유형 | 포트 범위 | 소스 | 설명 |
+|------|----------|------|------|
+| SSH | 22 | 내 IP | SSH 접속 |
+| 사용자 지정 TCP | 3000 | 0.0.0.0/0 | Grafana 대시보드 |
+| 사용자 지정 TCP | 9090 | 내 IP | Prometheus UI (관리자만) |
+
+15. **보안 그룹 생성**
+
 ### D-2. API 인스턴스 생성
 
 1. EC2 콘솔 → **인스턴스 시작(Launch instances)**
@@ -358,12 +372,12 @@ chmod 400 ~/Downloads/policy-pass-key.pem
 | 항목 | 값 |
 |------|-----|
 | 이름 | `policy-pass-api` |
-| AMI | **Amazon Linux 2023** (프리 티어 사용 가능) |
-| 인스턴스 유형 | **t2.micro** (1 vCPU, 1 GB) |
+| AMI | **Amazon Linux 2023** |
+| 인스턴스 유형 | **t3.medium** (2 vCPU, 4 GB) |
 | 키 페어 | `policy-pass-key` |
 | 보안 그룹 | `policy-pass-api-sg` (기존 보안 그룹 선택) |
 | IAM 인스턴스 프로파일 | `EC2InstanceRole` |
-| 스토리지 | 20 GiB gp3 (프리 티어 30GB 한도 내) |
+| 스토리지 | 20 GiB gp3 |
 
 3. **고급 세부 정보** 펼치기 → **IAM 인스턴스 프로파일**: `EC2InstanceRole` 선택
 4. **사용자 데이터(User data)** 에 아래 스크립트 입력:
@@ -433,7 +447,7 @@ curl http://localhost:8080/health
 |------|-----|
 | 이름 | `policy-pass-ui` |
 | AMI | **Amazon Linux 2023** |
-| 인스턴스 유형 | **t2.micro** |
+| 인스턴스 유형 | **t3.small** (2 vCPU, 2 GB) |
 | 키 페어 | `policy-pass-key` |
 | 보안 그룹 | `policy-pass-ui-sg` |
 | 스토리지 | 10 GiB gp3 |
@@ -485,7 +499,99 @@ ssh -i ~/Downloads/policy-pass-key.pem ec2-user@{UI_PUBLIC_IP}
 
 ---
 
-### D-4. 탄력적 IP 할당 (선택 권장)
+### D-4. 모니터링 인스턴스 생성
+
+1. EC2 콘솔 → **인스턴스 시작**
+2. 설정:
+
+| 항목 | 값 |
+|------|-----|
+| 이름 | `policy-pass-monitor` |
+| AMI | **Amazon Linux 2023** |
+| 인스턴스 유형 | **t3.small** (2 vCPU, 2 GB) |
+| 키 페어 | `policy-pass-key` |
+| 보안 그룹 | `policy-pass-monitor-sg` |
+| 스토리지 | 15 GiB gp3 |
+
+3. **사용자 데이터**:
+
+```bash
+#!/bin/bash
+yum update -y
+yum install -y docker
+systemctl start docker
+systemctl enable docker
+usermod -aG docker ec2-user
+
+# Docker Compose 설치
+curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
+  -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+
+# 모니터링 설정 디렉토리
+mkdir -p /home/ec2-user/monitoring
+cat > /home/ec2-user/monitoring/docker-compose.yml << 'COMPOSE'
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=policypass2026
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:
+COMPOSE
+
+cat > /home/ec2-user/monitoring/prometheus.yml << 'PROM'
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+PROM
+
+chown -R ec2-user:ec2-user /home/ec2-user/monitoring
+```
+
+4. **인스턴스 시작**
+
+#### 첫 실행
+
+```bash
+ssh -i ~/Downloads/policy-pass-key.pem ec2-user@{MONITOR_PUBLIC_IP}
+cd monitoring
+docker-compose up -d
+```
+
+#### 검증
+
+- Grafana: `http://{MONITOR_PUBLIC_IP}:3000` → 로그인 (admin / policypass2026)
+- Prometheus: `http://{MONITOR_PUBLIC_IP}:9090` → Prometheus UI
+
+> API, UI 서버의 메트릭을 수집하려면 `prometheus.yml`의 `scrape_configs`에 타겟을 추가한다.  
+> 예: `targets: ['{API_PUBLIC_IP}:8080', '{UI_PUBLIC_IP}:8501']`
+
+---
+
+### D-5. 탄력적 IP 할당 (선택 권장)
 
 EC2 인스턴스를 중지/시작하면 퍼블릭 IP가 변경된다. 고정 IP가 필요하면:
 
@@ -493,7 +599,7 @@ EC2 인스턴스를 중지/시작하면 퍼블릭 IP가 변경된다. 고정 IP�
 2. **탄력적 IP 주소 할당** → **할당**
 3. 할당된 IP 선택 → **작업** → **탄력적 IP 주소 연결**
 4. 인스턴스: `policy-pass-api` 선택 → **연결**
-5. UI 인스턴스도 동일하게 반복
+5. UI, 모니터링 인스턴스도 동일하게 반복 (총 3개 탄력적 IP)
 
 > **주의**: 탄력적 IP는 인스턴스에 연결되어 있으면 무료, 연결 안 하면 과금.  
 > 인스턴스 삭제 시 탄력적 IP도 반드시 릴리스해야 한다.
@@ -591,9 +697,9 @@ ssh -i ~/Downloads/policy-pass-key.pem ec2-user@{PUBLIC_IP}
 
 AWS 비용이 더 이상 필요 없을 때 역순으로 삭제한다:
 
-1. **EC2**: 인스턴스 2개 종료 (`policy-pass-ui` → `policy-pass-api`)
-2. **탄력적 IP**: 연결 해제 → 릴리스
-3. **보안 그룹**: 2개 삭제
+1. **EC2**: 인스턴스 3개 종료 (`policy-pass-monitor` → `policy-pass-ui` → `policy-pass-api`)
+2. **탄력적 IP**: 연결 해제 → 릴리스 (3개)
+3. **보안 그룹**: 3개 삭제
 4. **키 페어**: 삭제
 5. **CloudWatch**: 알람 삭제
 6. **DataSync**: 태스크 → 위치 삭제

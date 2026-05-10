@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # API server metrics (update IP after EC2 launch)
+  # - job_name: "policy-pass-api"
+  #   metrics_path: /metrics
+  #   static_configs:
+  #     - targets: ["{API_PUBLIC_IP}:8080"]
+
+  # UI server metrics (update IP after EC2 launch)
+  # - job_name: "policy-pass-ui"
+  #   metrics_path: /metrics
+  #   static_configs:
+  #     - targets: ["{UI_PUBLIC_IP}:8501"]

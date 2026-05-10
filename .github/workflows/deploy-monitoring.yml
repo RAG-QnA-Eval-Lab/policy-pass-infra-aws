@@ -1,0 +1,37 @@
+name: Deploy Monitoring
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'monitoring/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy monitoring configs to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_MONITOR_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "monitoring/docker-compose.yml,monitoring/prometheus.yml"
+          target: "~/"
+          strip_components: 0
+
+      - name: Restart monitoring stack
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_MONITOR_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/monitoring
+            docker-compose pull
+            docker-compose up -d --force-recreate

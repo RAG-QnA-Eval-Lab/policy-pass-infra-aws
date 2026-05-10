@@ -1,0 +1,37 @@
+name: Deploy Airflow VM
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dags/**"
+      - "scripts/**"
+      - "src/ingestion/**"
+      - "src/evaluation/**"
+      - "src/generation/**"
+      - "src/retrieval/**"
+      - "config/**"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: rag-qna-eval
+  ZONE: asia-northeast3-a
+  VM_NAME: rag-airflow-vm
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Deploy code to Airflow VM
+        run: |
+          gcloud compute ssh ${{ env.VM_NAME }} \
+            --zone=${{ env.ZONE }} \
+            --tunnel-through-iap \
+            --command="sudo git config --global --add safe.directory /opt/rag-pipeline && cd /opt/rag-pipeline && sudo git fetch origin main && sudo git reset --hard origin/main && sudo /opt/airflow/venv/bin/pip install -e '.[ingestion,indexer,ko,eval]' --quiet 2>&1 | tail -5 && sudo chown -R airflow:airflow /opt/rag-pipeline/data/"
