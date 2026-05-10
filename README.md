@@ -1,9 +1,5 @@
 # Policy Pass - AWS Online Serving Infrastructure
 
-> **청년정책 RAG QnA 시스템**의 AWS 서빙 인프라 관리 레포지토리
-
----
-
 ## Overview
 
 이 레포지토리는 멀티클라우드 RAG QnA 시스템(Policy Pass)의 **AWS Online Serving Layer** 인프라를 관리한다.
