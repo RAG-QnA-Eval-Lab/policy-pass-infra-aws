@@ -19,10 +19,6 @@ MongoDB (Metadata)                         Monitoring (Grafana + Prometheus)
 
 ---
 
-## Architecture
-
-![RAG QA Pipeline - Multicloud Architecture](docs/architecture.png)
-
 ### AWS Services
 
 | Service | Resource | Purpose |

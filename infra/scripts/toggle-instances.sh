@@ -15,7 +15,7 @@ if [ -z "${ACTION}" ] || { [ "${ACTION}" != "start" ] && [ "${ACTION}" != "stop"
     exit 1
 fi
 
-INSTANCE_NAMES=("policy-pass-api" "policy-pass-ui" "policy-pass-monitor")
+INSTANCE_NAMES=("policy-pass-api" "policy-pass-monitor")
 
 echo "=== ${ACTION^} Policy Pass Instances ==="
 
