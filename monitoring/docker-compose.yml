@@ -17,7 +17,6 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-policypass2026}
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-googlecloud-datasource
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
@@ -29,6 +28,7 @@ services:
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
+    hostname: policy-pass-monitor
     ports:
       - "9100:9100"
     volumes:
