@@ -64,3 +64,4 @@ data/tmp/
 # Logs
 *.log
 logs/
+*.pem

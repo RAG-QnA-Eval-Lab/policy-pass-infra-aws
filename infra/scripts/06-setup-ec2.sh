@@ -123,9 +123,9 @@ create_sg() {
             --vpc-id "${VPC_ID}" \
             --region "${REGION}" \
             --query GroupId --output text)
-        echo "  -> Created ${name}: ${sg_id}"
+        echo "  -> Created ${name}: ${sg_id}" >&2
     else
-        echo "  -> ${name} already exists: ${sg_id}"
+        echo "  -> ${name} already exists: ${sg_id}" >&2
     fi
     echo "${sg_id}"
 }
