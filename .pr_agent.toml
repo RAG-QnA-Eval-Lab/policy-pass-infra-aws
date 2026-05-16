@@ -1,5 +1,6 @@
 [config]
 model = "gemini/gemini-2.5-flash"
+output_language = "Korean"
 
 [pr_reviewer]
 require_focused_review = false
