@@ -7,14 +7,16 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 
-  # API server metrics (update IP after EC2 launch)
-  # - job_name: "policy-pass-api"
-  #   metrics_path: /metrics
-  #   static_configs:
-  #     - targets: ["{API_PUBLIC_IP}:8080"]
+  - job_name: "policy-pass-api"
+    metrics_path: /metrics
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["54.116.152.245:8080"]
+        labels:
+          instance: "policy-pass-api"
 
-  # UI server metrics (update IP after EC2 launch)
-  # - job_name: "policy-pass-ui"
-  #   metrics_path: /metrics
-  #   static_configs:
-  #     - targets: ["{UI_PUBLIC_IP}:8501"]
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["localhost:9100"]
+        labels:
+          instance: "policy-pass-monitor"

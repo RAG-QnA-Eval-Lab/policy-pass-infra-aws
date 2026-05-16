@@ -21,7 +21,7 @@ jobs:
           host: ${{ secrets.EC2_MONITOR_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "monitoring/docker-compose.yml,monitoring/prometheus.yml"
+          source: "monitoring/"
           target: "~/"
           strip_components: 0
 

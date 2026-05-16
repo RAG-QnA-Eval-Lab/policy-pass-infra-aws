@@ -1,0 +1,21 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+
+  - name: Google Cloud Monitoring
+    type: stackdriver
+    access: proxy
+    jsonData:
+      authenticationType: jwt
+      defaultProject: rag-qna-eval
+      clientEmail: ${GCP_SA_CLIENT_EMAIL}
+      tokenUri: https://oauth2.googleapis.com/token
+    secureJsonData:
+      privateKey: ${GCP_SA_PRIVATE_KEY}
+    editable: true
