@@ -1,6 +1,6 @@
 # AWS Online Serving 인프라 구축 계획서
 
-> **최종 수정일**: 2026-05-15  
+> **최종 수정일**: 2026-05-16  
 > **담당자**: Daehyun Kim (인프라)  
 > **관련 문서**: [멀티클라우드 아키텍처 정리본](../multicloud_architecture_summary.md)
 
@@ -181,7 +181,7 @@ Developer → Monitoring Dashboard (Grafana)
 
 ## 4. 인프라 아키텍처 상세
 
-### 4.1 IAM 역할 (Phase A)
+### 4.1 IAM 역할 (Phase A) ✅ 완료
 
 ```
 EC2InstanceRole
@@ -203,7 +203,7 @@ GitHub Actions IAM User
     └── CloudFront: CreateInvalidation
 ```
 
-### 4.2 ECR 레지스트리 (Phase A)
+### 4.2 ECR 레지스트리 (Phase A) ✅ 완료
 
 ```
 rag-api  ← API 컨테이너 이미지
@@ -214,7 +214,7 @@ rag-api  ← API 컨테이너 이미지
 ※ rag-ui ECR 레포는 불필요 (프론트엔드는 S3 + CloudFront로 서빙)
 ```
 
-### 4.3 S3 버킷 (Phase A)
+### 4.3 S3 버킷 (Phase A) ✅ 완료
 
 ```
 rag-qa-index-${ACCOUNT_ID}
@@ -226,7 +226,7 @@ rag-qa-index-${ACCOUNT_ID}
         └── metadata.json    (정책 메타데이터)
 ```
 
-### 4.4 DataSync (Phase B)
+### 4.4 DataSync (Phase B) ✅ 완료
 
 GCS에서 S3로 FAISS 인덱스를 증분 전송한다. GCS의 S3 호환 API(HMAC 키)를 활용한다.
 
@@ -251,20 +251,39 @@ Task 설정:
 └── OverwriteMode: ALWAYS
 ```
 
-### 4.5 SSM Parameter Store (Phase B)
+### 4.5 SSM Parameter Store (Phase B) ✅ 완료
+
+> **구축일**: 2026-05-16  
+> **스크립트**: `infra/scripts/05-setup-ssm.sh`
 
 ```
-/rag-qa/openai-api-key     (SecureString) ← OpenAI API 키
-/rag-qa/mongodb-uri         (SecureString) ← MongoDB 연결 문자열
-/rag-qa/mongodb-db          (String)       ← MongoDB 데이터베이스명
-/rag-qa/s3-bucket           (String)       ← 인덱스 버킷명
-/rag-qa/index-s3-prefix     (String)       ← 인덱스 경로 (기본값: "index/")
-/rag-qa/embedding-model     (String)       ← 임베딩 모델명
-/rag-qa/embedding-dim       (String)       ← 임베딩 차원 수
-/rag-qa/environment         (String)       ← 환경 (production/staging)
+/rag-qa/openai-api-key     (SecureString) ← OpenAI API 키 (GCP .env에서 가져옴)
+/rag-qa/mongodb-uri         (SecureString) ← MongoDB 연결 문자열 (GCP MongoDB: 34.47.80.98)
+/rag-qa/mongodb-db          (String)       ← "rag_youth_policy"
+/rag-qa/s3-bucket           (String)       ← "rag-qa-index-355206939988"
+/rag-qa/index-s3-prefix     (String)       ← "index/"
+/rag-qa/embedding-model     (String)       ← "openai/text-embedding-3-small"
+/rag-qa/embedding-dim       (String)       ← "1536"
+/rag-qa/environment         (String)       ← "production"
 ```
 
-### 4.6 EC2 인스턴스 (Phase D)
+검증: `aws ssm get-parameters-by-path --path /rag-qa/ --region ap-northeast-2`
+
+### 4.6 EC2 인스턴스 (Phase D) ✅ 완료
+
+> **구축일**: 2026-05-16  
+> **스크립트**: `infra/scripts/06-setup-ec2.sh`
+
+| 리소스 | ID / 값 |
+|--------|---------|
+| VPC | vpc-02bdbd24195a7a8f8 (10.0.0.0/16) |
+| Subnet | subnet-08684e9866f7952aa (ap-northeast-2a) |
+| API Instance | i-0fe59710ffcf75aa1 (t3.medium) |
+| API EIP | 54.116.152.245 |
+| Monitor Instance | i-08ba9acd4db6d29ce (t3.small) |
+| Monitor EIP | 3.36.217.53 |
+| API SG | sg-054aab8ad977f8944 |
+| Monitor SG | sg-06a8a422dcd94c507 |
 
 EC2는 **Public Subnet**에 배치한다. Private Subnet + API Gateway 구성은 NAT Gateway($44/월) + NLB($17/월) + VPC Link($7/월)로 월 +$68 추가 비용이 발생하여 현재 규모에서는 과도하다. 대신 Security Group 강화로 동등한 보안을 확보한다.
 
@@ -329,7 +348,19 @@ Private Subnet 대신 Security Group을 강화하여 비용 $0으로 보안을 �
 - 월 예산 $120 이상 확보
 - PCI-DSS, HIPAA 등 컴플라이언스 요구사항 발생
 
-### 4.7 프론트엔드 — S3 + CloudFront (Phase D)
+### 4.7 프론트엔드 — S3 + CloudFront (Phase D) ✅ 완료
+
+> **구축일**: 2026-05-16
+
+| 리소스 | 값 |
+|--------|---|
+| S3 버킷 | policy-pass-ui-355206939988 |
+| Distribution ID | E2HV6ON5OEZJTS |
+| 도메인 | dnoi7zxhwqqog.cloudfront.net |
+| OAC | EH87KH1N3ZNH6 (policy-pass-ui-oac) |
+| 에러 페이지 | 403/404 → /index.html (200) |
+| 기본 루트 객체 | index.html |
+| WAF | 기본 보호 포함 (무료) |
 
 EC2 Docker 컨테이너 대신 S3 정적 호스팅 + CloudFront CDN을 사용한다.
 React + Vite + TypeScript SPA는 `vite build`로 정적 파일(`dist/`)을 생성하므로 서버가 필요 없다.
@@ -451,11 +482,16 @@ app.add_middleware(
 GCP Airflow DAG → GitHub API (repository_dispatch) → AWS 레포 워크플로우 실행
 ```
 
-### 4.9 CloudWatch 모니터링 (Phase E)
+### 4.9 CloudWatch 모니터링 (Phase E) ✅ 완료
+
+> **구축일**: 2026-05-16  
+> **스크립트**: `infra/scripts/07-setup-monitoring.sh`
 
 ```
-알람 1: API CPU 사용률 > 80% (10분 지속)
-알람 2: EC2 상태 체크 실패
+알람 1: policy-pass-api-cpu-high (CPU > 80%, 10분 지속)
+알람 2: policy-pass-monitor-cpu-high (CPU > 80%, 10분 지속)
+알람 3: policy-pass-api-status-check (상태 체크 실패)
+알람 4: policy-pass-monitor-status-check (상태 체크 실패)
 (선택) SNS 토픽을 연결하여 이메일 알림 가능
 ```
 
@@ -501,23 +537,23 @@ def trigger_api_redeploy(synced: dict) -> dict:
 ## 6. 구현 순서
 
 ```
-Phase A: Foundation
+Phase A: Foundation ✅
   01-setup-iam.sh → 02-setup-ecr.sh → 03-setup-s3.sh
 
-Phase B: Data Sync + Secrets
+Phase B: Data Sync + Secrets ✅
   04-setup-datasync.sh → 05-setup-ssm.sh
 
-Phase C: Application Build
-  API Docker 이미지 빌드 → ECR push
+Phase C: Application Build ✅
+  API Docker 이미지 빌드 → ECR push (latest: 6b4d0b86, 2026-05-10)
 
-Phase D: Compute + Frontend
-  06-setup-ec2.sh (API + Monitor 인스턴스)
-  09-setup-cloudfront.sh (S3 버킷 + CloudFront Distribution)
+Phase D: Compute + Frontend ✅
+  06-setup-ec2.sh (API + Monitor 인스턴스) ✅
+  09-setup-cloudfront.sh (S3 버킷 + CloudFront Distribution) ✅
 
-Phase E: CI/CD + Monitoring
-  deploy-api.yml (Docker → ECR → SSH deploy)
-  deploy-ui.yml (vite build → S3 sync → CloudFront invalidation)
-  07-setup-monitoring.sh
+Phase E: CI/CD + Monitoring ✅
+  deploy-api.yml (Docker → ECR → SSH deploy) ✅ GitHub Secrets 8개 설정
+  deploy-ui.yml (vite build → S3 sync → CloudFront invalidation) ✅
+  07-setup-monitoring.sh ✅
 
 Phase F: GCP Airflow DAG Integration
   dag_collect_index.py 수정 (DataSync Task ARN 확정 후)
