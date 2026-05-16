@@ -3,7 +3,7 @@ apiVersion: 1
 providers:
   - name: Policy Pass
     orgId: 1
-    folder: Policy Pass
+    folder: Policy Pass Monitoring
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30

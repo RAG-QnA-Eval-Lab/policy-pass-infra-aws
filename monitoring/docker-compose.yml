@@ -28,6 +28,7 @@ services:
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
+    hostname: policy-pass-monitor
     ports:
       - "9100:9100"
     volumes:
