@@ -1,0 +1,18 @@
+[config]
+model = "gemini/gemini-2.5-flash"
+
+[pr_reviewer]
+require_focused_review = false
+require_score_review = true
+require_tests_review = true
+require_security_review = true
+require_estimate_effort_to_review = true
+num_code_suggestions = 4
+
+[pr_description]
+publish_labels = true
+
+[github_action_config]
+auto_review = true
+auto_describe = true
+auto_improve = true
