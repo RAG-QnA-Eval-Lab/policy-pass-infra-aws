@@ -1,0 +1,537 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "panels": [
+      {
+        "collapsed": false,
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+        "id": 100,
+        "title": "MongoDB Health",
+        "type": "row"
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "options": { "0": { "color": "red", "text": "DOWN" }, "1": { "color": "green", "text": "UP" } }, "type": "value" }
+            ],
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] },
+            "color": { "mode": "thresholds" }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 4, "w": 3, "x": 0, "y": 1 },
+        "id": 1,
+        "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+        "title": "MongoDB Status",
+        "type": "stat",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_up{job=\"mongodb\"}", "legendFormat": "", "refId": "A" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] },
+            "color": { "mode": "thresholds" }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 4, "w": 3, "x": 3, "y": 1 },
+        "id": 2,
+        "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+        "title": "Uptime",
+        "type": "stat",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_uptime{job=\"mongodb\"}", "legendFormat": "", "refId": "A" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 100 } ] },
+            "color": { "mode": "thresholds" }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 4, "w": 3, "x": 6, "y": 1 },
+        "id": 3,
+        "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+        "title": "Current Connections",
+        "type": "stat",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"current\",job=\"mongodb\"}", "legendFormat": "", "refId": "A" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] },
+            "color": { "mode": "thresholds" }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 4, "w": 3, "x": 9, "y": 1 },
+        "id": 4,
+        "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+        "title": "Available Connections",
+        "type": "stat",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"available\",job=\"mongodb\"}", "legendFormat": "", "refId": "A" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 536870912 }, { "color": "red", "value": 1073741824 } ] },
+            "color": { "mode": "thresholds" }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 4, "w": 3, "x": 12, "y": 1 },
+        "id": 5,
+        "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+        "title": "Resident Memory",
+        "type": "stat",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_mem_resident{job=\"mongodb\"} * 1024 * 1024", "legendFormat": "", "refId": "A" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "blue", "value": null } ] },
+            "color": { "mode": "thresholds" }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 4, "w": 3, "x": 15, "y": 1 },
+        "id": 6,
+        "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+        "title": "Virtual Memory",
+        "type": "stat",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_mem_virtual{job=\"mongodb\"} * 1024 * 1024", "legendFormat": "", "refId": "A" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] },
+            "color": { "mode": "thresholds" }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 4, "w": 3, "x": 18, "y": 1 },
+        "id": 7,
+        "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+        "title": "Total Created",
+        "type": "stat",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"totalCreated\",job=\"mongodb\"}", "legendFormat": "", "refId": "A" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "purple", "value": null } ] },
+            "color": { "mode": "thresholds" }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 4, "w": 3, "x": 21, "y": 1 },
+        "id": 8,
+        "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+        "title": "Active Connections",
+        "type": "stat",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"active\",job=\"mongodb\"}", "legendFormat": "", "refId": "A" }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+        "id": 200,
+        "title": "Operations",
+        "type": "row"
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10,
+              "gradientMode": "scheme", "spanNulls": false, "showPoints": "never",
+              "axisCenteredZero": false, "axisColorMode": "text", "scaleDistribution": { "type": "linear" },
+              "stacking": { "mode": "none" }, "thresholdsStyle": { "mode": "off" }
+            },
+            "unit": "ops",
+            "color": { "mode": "palette-classic" },
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+        "id": 10,
+        "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+        "title": "Operations per Second",
+        "type": "timeseries",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_opcounters{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "{{legacy_op_type}}", "refId": "A" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10,
+              "gradientMode": "scheme", "spanNulls": false, "showPoints": "never",
+              "axisCenteredZero": false, "axisColorMode": "text", "scaleDistribution": { "type": "linear" },
+              "stacking": { "mode": "none" }, "thresholdsStyle": { "mode": "off" }
+            },
+            "unit": "ops",
+            "color": { "mode": "palette-classic" },
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+        "id": 11,
+        "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+        "title": "Document Operations per Second",
+        "type": "timeseries",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_metrics_document{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "{{doc_op_type}}", "refId": "A" }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+        "id": 300,
+        "title": "Connections & Cursors",
+        "type": "row"
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 15,
+              "gradientMode": "scheme", "spanNulls": false, "showPoints": "never",
+              "axisCenteredZero": false, "axisColorMode": "text", "scaleDistribution": { "type": "linear" },
+              "stacking": { "mode": "none" }, "thresholdsStyle": { "mode": "off" }
+            },
+            "color": { "mode": "palette-classic" },
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+        "id": 12,
+        "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+        "title": "Connections Over Time",
+        "type": "timeseries",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"current\",job=\"mongodb\"}", "legendFormat": "Current", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"active\",job=\"mongodb\"}", "legendFormat": "Active", "refId": "B" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"available\",job=\"mongodb\"}", "legendFormat": "Available", "refId": "C" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10,
+              "gradientMode": "scheme", "spanNulls": false, "showPoints": "never",
+              "axisCenteredZero": false, "axisColorMode": "text", "scaleDistribution": { "type": "linear" },
+              "stacking": { "mode": "none" }, "thresholdsStyle": { "mode": "off" }
+            },
+            "color": { "mode": "palette-classic" },
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+        "id": 13,
+        "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+        "title": "Open Cursors",
+        "type": "timeseries",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_metrics_cursor_open{csr_type=\"total\",job=\"mongodb\"}", "legendFormat": "Total Open", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_metrics_cursor_open{csr_type=\"noTimeout\",job=\"mongodb\"}", "legendFormat": "No Timeout", "refId": "B" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_metrics_cursor_open{csr_type=\"pinned\",job=\"mongodb\"}", "legendFormat": "Pinned", "refId": "C" }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+        "id": 400,
+        "title": "Memory & Network",
+        "type": "row"
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 20,
+              "gradientMode": "scheme", "spanNulls": false, "showPoints": "never",
+              "axisCenteredZero": false, "axisColorMode": "text", "scaleDistribution": { "type": "linear" },
+              "stacking": { "mode": "none" }, "thresholdsStyle": { "mode": "off" }
+            },
+            "unit": "decmbytes",
+            "color": { "mode": "palette-classic" },
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+        "id": 14,
+        "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+        "title": "Memory Usage",
+        "type": "timeseries",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_mem_resident{job=\"mongodb\"}", "legendFormat": "Resident", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_mem_virtual{job=\"mongodb\"}", "legendFormat": "Virtual", "refId": "B" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10,
+              "gradientMode": "scheme", "spanNulls": false, "showPoints": "never",
+              "axisCenteredZero": false, "axisColorMode": "text", "scaleDistribution": { "type": "linear" },
+              "stacking": { "mode": "none" }, "thresholdsStyle": { "mode": "off" }
+            },
+            "unit": "Bps",
+            "color": { "mode": "palette-classic" },
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+        "id": 15,
+        "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+        "title": "Network I/O",
+        "type": "timeseries",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_network_bytesIn{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Bytes In", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_network_bytesOut{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Bytes Out", "refId": "B" }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+        "id": 500,
+        "title": "WiredTiger & Latency",
+        "type": "row"
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10,
+              "gradientMode": "scheme", "spanNulls": false, "showPoints": "never",
+              "axisCenteredZero": false, "axisColorMode": "text", "scaleDistribution": { "type": "linear" },
+              "stacking": { "mode": "none" }, "thresholdsStyle": { "mode": "off" }
+            },
+            "unit": "short",
+            "color": { "mode": "palette-classic" },
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 8, "w": 8, "x": 0, "y": 33 },
+        "id": 16,
+        "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+        "title": "WiredTiger Cache",
+        "type": "timeseries",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_wt_cache_bytes_currently_in_the_cache{job=\"mongodb\"}", "legendFormat": "In Cache", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_wt_cache_maximum_bytes_configured{job=\"mongodb\"}", "legendFormat": "Max Configured", "refId": "B" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_wt_cache_tracked_dirty_bytes_in_the_cache{job=\"mongodb\"}", "legendFormat": "Dirty", "refId": "C" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10,
+              "gradientMode": "scheme", "spanNulls": false, "showPoints": "never",
+              "axisCenteredZero": false, "axisColorMode": "text", "scaleDistribution": { "type": "linear" },
+              "stacking": { "mode": "none" }, "thresholdsStyle": { "mode": "off" }
+            },
+            "unit": "short",
+            "color": { "mode": "palette-classic" },
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 8, "w": 8, "x": 8, "y": 33 },
+        "id": 17,
+        "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+        "title": "Page Faults",
+        "type": "timeseries",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_extra_info_page_faults{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Page Faults/s", "refId": "A" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10,
+              "gradientMode": "scheme", "spanNulls": false, "showPoints": "never",
+              "axisCenteredZero": false, "axisColorMode": "text", "scaleDistribution": { "type": "linear" },
+              "stacking": { "mode": "none" }, "thresholdsStyle": { "mode": "off" }
+            },
+            "unit": "short",
+            "color": { "mode": "palette-classic" },
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 8, "w": 8, "x": 16, "y": 33 },
+        "id": 18,
+        "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+        "title": "Asserts per Second",
+        "type": "timeseries",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_asserts{assert_type=\"regular\",job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Regular", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_asserts{assert_type=\"warning\",job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Warning", "refId": "B" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_asserts{assert_type=\"msg\",job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Message", "refId": "C" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_asserts{assert_type=\"user\",job=\"mongodb\"}[$__rate_interval])", "legendFormat": "User", "refId": "D" }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 41 },
+        "id": 600,
+        "title": "Query & Lock",
+        "type": "row"
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10,
+              "gradientMode": "scheme", "spanNulls": false, "showPoints": "never",
+              "axisCenteredZero": false, "axisColorMode": "text", "scaleDistribution": { "type": "linear" },
+              "stacking": { "mode": "none" }, "thresholdsStyle": { "mode": "off" }
+            },
+            "unit": "short",
+            "color": { "mode": "palette-classic" },
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 8, "w": 8, "x": 0, "y": 42 },
+        "id": 19,
+        "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+        "title": "Query Executor Scanned",
+        "type": "timeseries",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_metrics_queryExecutor_scanned{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Keys Scanned/s", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_metrics_queryExecutor_scannedObjects{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Objects Scanned/s", "refId": "B" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10,
+              "gradientMode": "scheme", "spanNulls": false, "showPoints": "never",
+              "axisCenteredZero": false, "axisColorMode": "text", "scaleDistribution": { "type": "linear" },
+              "stacking": { "mode": "normal" }, "thresholdsStyle": { "mode": "off" }
+            },
+            "unit": "short",
+            "color": { "mode": "palette-classic" },
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 8, "w": 8, "x": 8, "y": 42 },
+        "id": 20,
+        "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+        "title": "Global Lock Queue",
+        "type": "timeseries",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_currentQueue{count_type=\"readers\",job=\"mongodb\"}", "legendFormat": "Readers", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_currentQueue{count_type=\"writers\",job=\"mongodb\"}", "legendFormat": "Writers", "refId": "B" }
+        ]
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10,
+              "gradientMode": "scheme", "spanNulls": false, "showPoints": "never",
+              "axisCenteredZero": false, "axisColorMode": "text", "scaleDistribution": { "type": "linear" },
+              "stacking": { "mode": "none" }, "thresholdsStyle": { "mode": "off" }
+            },
+            "unit": "short",
+            "color": { "mode": "palette-classic" },
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
+          },
+          "overrides": []
+        },
+        "gridPos": { "h": 8, "w": 8, "x": 16, "y": 42 },
+        "id": 21,
+        "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+        "title": "Active Clients",
+        "type": "timeseries",
+        "targets": [
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_activeClients{count_type=\"readers\",job=\"mongodb\"}", "legendFormat": "Readers", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_activeClients{count_type=\"writers\",job=\"mongodb\"}", "legendFormat": "Writers", "refId": "B" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_activeClients{count_type=\"total\",job=\"mongodb\"}", "legendFormat": "Total", "refId": "C" }
+        ]
+      }
+    ],
+    "schemaVersion": 39,
+    "tags": ["mongodb", "percona", "prometheus"],
+    "templating": { "list": [] },
+    "time": { "from": "now-1h", "to": "now" },
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "MongoDB (Percona Exporter)",
+    "uid": "mongodb-percona",
+    "version": 1
+  }
+  
