@@ -16,8 +16,8 @@ AWS(Online Serving)에서 인덱스를 로드하여 실시간 검색, LLM 응답
 | Service | Resource | ID / Value |
 |---------|----------|------------|
 | **VPC** | policy-pass-vpc | `vpc-02bdbd24195a7a8f8` (10.0.0.0/16) |
-| **EC2** | policy-pass-api (t3.medium) | `i-0fe59710ffcf75aa1` / 54.116.152.245 |
-| **EC2** | policy-pass-monitor (t3.small) | `i-08ba9acd4db6d29ce` / 3.36.217.53 |
+| **EC2** | policy-pass-api (t3.medium) | `i-0fe59710ffcf75aa1` / 3.35.151.233 (EIP) |
+| **EC2** | policy-pass-monitor (t3.small) | `i-08ba9acd4db6d29ce` / 3.35.247.34 (EIP) |
 | **S3** | FAISS 인덱스 | `rag-qa-index-355206939988` |
 | **S3** | UI 정적 호스팅 | `policy-pass-ui-355206939988` |
 | **CloudFront** | UI CDN | `E2HV6ON5OEZJTS` / dnoi7zxhwqqog.cloudfront.net |
@@ -99,7 +99,8 @@ graph LR
 |--------|------|
 | `AWS_ACCESS_KEY_ID` | IAM 액세스 키 |
 | `AWS_SECRET_ACCESS_KEY` | IAM 시크릿 키 |
-| `EC2_API_HOST` | API EC2 EIP |
+| `EC2_API_HOST` | API EC2 Elastic IP |
+| `EC2_MONITOR_HOST` | Monitor EC2 Elastic IP |
 | `EC2_SSH_KEY` | SSH 프라이빗 키 |
 | `UI_S3_BUCKET` | UI S3 버킷명 |
 | `CLOUDFRONT_DISTRIBUTION_ID` | CloudFront 배포 ID |

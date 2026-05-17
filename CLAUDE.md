@@ -62,7 +62,8 @@ npm run lint      # ESLint
 
 - **No IaC tool** — Managed via idempotent bash scripts (AWS CLI), not Terraform/CDK. Scripts are numbered for sequential execution order.
 - **All scripts default** `AWS_REGION=ap-northeast-2` and derive `ACCOUNT_ID` from `aws sts get-caller-identity`.
-- **Security groups** restrict SSH to the deployer's current IP (`checkip.amazonaws.com`); service ports are open to `0.0.0.0/0`.
+- **Elastic IPs** are assigned to both EC2 instances (API: `3.35.151.233`, Monitor: `3.35.247.34`). IPs persist across instance stop/start.
+- **Security groups** allow SSH from `0.0.0.0/0` (for CI/CD); service ports are open to `0.0.0.0/0`. Node-exporter (9100) on API SG is restricted to Monitor EIP only.
 - **EC2 user data** scripts install Docker and create a `deploy.sh` on each instance that pulls from ECR and runs the container.
 - **Naming convention**: AWS resources use `policy-pass-*` or `rag-qa-*` prefixes.
 - **Env var templates** are split per service: root `.env.example` (infra/CI), `services/api/.env.example` (backend), `services/ui/.env.example` (frontend).
