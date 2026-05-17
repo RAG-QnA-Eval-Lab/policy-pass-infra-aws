@@ -8,14 +8,3 @@ datasources:
     isDefault: true
     editable: true
 
-  - name: Google Cloud Monitoring
-    type: stackdriver
-    access: proxy
-    jsonData:
-      authenticationType: jwt
-      defaultProject: rag-qna-eval
-      clientEmail: ${GCP_SA_CLIENT_EMAIL}
-      tokenUri: https://oauth2.googleapis.com/token
-    secureJsonData:
-      privateKey: ${GCP_SA_PRIVATE_KEY}
-    editable: true

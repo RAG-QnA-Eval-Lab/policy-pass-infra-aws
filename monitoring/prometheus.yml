@@ -7,33 +7,28 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 
-  - job_name: "policy-pass-api"
-    metrics_path: /metrics
-    scrape_interval: 30s
+  - job_name: "aws-api"
     static_configs:
       - targets: ["3.35.151.233:8080"]
         labels:
-          instance: "policy-pass-api"
-
-  - job_name: "node-exporter"
-    static_configs:
-      - targets: ["node-exporter:9100"]
-        labels:
-          instance: "policy-pass-monitor"
+          type: "app"
       - targets: ["3.35.151.233:9100"]
         labels:
-          instance: "policy-pass-api"
+          type: "node"
 
-  # GCP MongoDB Exporter (enable when GCP exporter is exposed externally)
-  # - job_name: "mongodb"
-  #   static_configs:
-  #     - targets: ["<GCP_MONGO_VM_EXTERNAL_IP>:9216"]
-  #       labels:
-  #         instance: "rag-mongo-vm"
+  - job_name: "aws-monitor"
+    static_configs:
+      - targets: ["node-exporter:9100"]
 
-  # GCP Node Exporter - Airflow VM (enable when exposed externally)
-  # - job_name: "node-airflow-vm"
-  #   static_configs:
-  #     - targets: ["<GCP_AIRFLOW_VM_EXTERNAL_IP>:9100"]
-  #       labels:
-  #         instance: "rag-airflow-vm"
+  - job_name: "gcp-mongodb"
+    static_configs:
+      - targets: ["34.47.80.98:9216"]
+        labels:
+          type: "mongodb"
+      - targets: ["34.47.80.98:9100"]
+        labels:
+          type: "node"
+
+  - job_name: "gcp-airflow"
+    static_configs:
+      - targets: ["34.47.107.145:9100"]

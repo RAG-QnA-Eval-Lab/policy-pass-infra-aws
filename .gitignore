@@ -42,6 +42,9 @@ docker-compose.override.yml
 .aws/
 *.pem
 
+# GCP SA keys
+monitoring/secrets/
+
 # Terraform (if used later)
 .terraform/
 *.tfstate

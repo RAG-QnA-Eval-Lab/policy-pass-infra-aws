@@ -413,7 +413,7 @@ repo 코드: `src/ingestion/mongo_client.py` — `PolicyMetadataStore` 클래스
 | `dag_qa_generation` | `dags/dag_qa_generation.py` | 수동 트리거 | QA 데이터셋 생성 |
 | `dag_evaluation` | `dags/dag_evaluation.py` | 수동 트리거 | 평가 파이프라인 실행 |
 
-> **Cloud Run Jobs → Airflow 전환 배경**: Cloud Run Jobs에서는 태스크 간 의존성 관리가 어렵고 (수집→인덱싱 체이닝 불가), 실행 상태 모니터링이 불편하며, 비용이 높았다 (월 ~₩38,000 → Airflow VM ~₩68,000이지만 3개 DAG 통합 운영으로 실효 비용 82% 절감). 자세한 비교는 `docs/plan.md`의 "Cloud Run Jobs → Airflow 전환 배경" 섹션 참조.
+> **Cloud Run Jobs → Airflow 전환 배경**: Cloud Run Jobs에서는 태스크 간 의존성 관리가 어렵고 (수집→인덱싱 체이닝 불가), 실행 상태 모니터링이 불편하며, 비용이 높았다 (월 ~₩38,000 → Airflow VM ~₩68,000이지만 3개 DAG 통합 운영으로 실효 비용 82% 절감). 자세한 비교는 GCP 파이프라인 레포(`RAG-QA-pipeline-GCP`) 참조.
 
 repo 코드:
 - `dags/` — Airflow DAG 정의 3개 + `dags/utils/cloud_run.py` 유틸리티
