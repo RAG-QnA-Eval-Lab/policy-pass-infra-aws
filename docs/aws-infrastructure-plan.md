@@ -1,6 +1,6 @@
 # AWS Online Serving 인프라 구축 계획서
 
-> **최종 수정일**: 2026-05-16  
+> **최종 수정일**: 2026-05-17  
 > **담당자**: Daehyun Kim (인프라)  
 > **관련 문서**: [멀티클라우드 아키텍처 정리본](../multicloud_architecture_summary.md)
 
@@ -279,9 +279,9 @@ Task 설정:
 | VPC | vpc-02bdbd24195a7a8f8 (10.0.0.0/16) |
 | Subnet | subnet-08684e9866f7952aa (ap-northeast-2a) |
 | API Instance | i-0fe59710ffcf75aa1 (t3.medium) |
-| API EIP | 54.116.152.245 |
+| API Elastic IP | 3.35.151.233 (eipalloc-07cba6bd9ee9b838a) |
 | Monitor Instance | i-08ba9acd4db6d29ce (t3.small) |
-| Monitor EIP | 3.36.217.53 |
+| Monitor Elastic IP | 3.35.247.34 (eipalloc-0519c2b41e0344fe0) |
 | API SG | sg-054aab8ad977f8944 |
 | Monitor SG | sg-06a8a422dcd94c507 |
 
@@ -307,7 +307,7 @@ IAM 역할: EC2InstanceRole (S3 + SSM + ECR 읽기)
 ```
 인스턴스: t3.small (2vCPU, 2GB)
 EBS: 15GB gp3
-네트워크: Public Subnet
+네트워크: Public Subnet (Elastic IP 할당)
 스택: docker-compose (Prometheus + Grafana)
 ```
 
@@ -320,16 +320,17 @@ Private Subnet 대신 Security Group을 강화하여 비용 $0으로 보안을 �
 | 방향 | 포트 | 소스 | 설명 |
 |------|------|------|------|
 | Inbound | 8080 | 0.0.0.0/0 | API (브라우저에서 직접 호출) |
-| Inbound | 22 | 관리자 IP/32 | SSH (본인 IP만 허용) |
+| Inbound | 22 | 0.0.0.0/0 | SSH (CI/CD 배포용) |
+| Inbound | 9100 | 3.35.247.34/32 | Node Exporter (모니터링 서버 Elastic IP만 허용) |
 | Outbound | All | 0.0.0.0/0 | OpenAI API, GCP MongoDB, ECR, S3 등 |
 
 **policy-pass-monitor-sg:**
 
 | 방향 | 포트 | 소스 | 설명 |
 |------|------|------|------|
-| Inbound | 3000 | 관리자 IP/32 | Grafana (본인 IP만 허용) |
-| Inbound | 9090 | 관리자 IP/32 | Prometheus (본인 IP만 허용) |
-| Inbound | 22 | 관리자 IP/32 | SSH (본인 IP만 허용) |
+| Inbound | 3000 | 0.0.0.0/0 | Grafana |
+| Inbound | 9090 | 0.0.0.0/0 | Prometheus |
+| Inbound | 22 | 0.0.0.0/0 | SSH (CI/CD 배포용) |
 
 **추가 보안 조치:**
 

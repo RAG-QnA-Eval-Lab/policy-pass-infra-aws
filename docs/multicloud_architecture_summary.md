@@ -1,5 +1,12 @@
 # 멀티클라우드 RAG 아키텍처 정리본
 
+> **참고**: 이 문서는 프로젝트 초기 아키텍처 논의를 정리한 것이다. 이후 구현 과정에서 일부 변경된 사항:
+> - AWS 서비스: ECS Fargate → **EC2 + Docker** (비용 절감)
+> - UI: Streamlit → **React SPA** (S3 + CloudFront)
+> - Repo 이름: `RAG-QA-serving-AWS` → **`policy-pass-infra-aws`**, `RAG-QA-pipeline-GCP` → **`policy-pass-datapipeline-gcp`**
+> - 팀원 앱 repo: `policy-pass-be` (FastAPI), `policy-pass-fe` (React)
+> - 현행 상세 내용은 [aws-infrastructure-plan.md](./aws-infrastructure-plan.md) 참조
+
 ## 1. 현재 논의의 결론
 
 이번 구조는 **A안**으로 정리한다.
