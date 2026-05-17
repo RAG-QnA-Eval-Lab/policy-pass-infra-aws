@@ -11,7 +11,7 @@ scrape_configs:
     metrics_path: /metrics
     scrape_interval: 30s
     static_configs:
-      - targets: ["54.116.152.245:8080"]
+      - targets: ["3.35.151.233:8080"]
         labels:
           instance: "policy-pass-api"
 
@@ -20,7 +20,7 @@ scrape_configs:
       - targets: ["node-exporter:9100"]
         labels:
           instance: "policy-pass-monitor"
-      - targets: ["54.116.152.245:9100"]
+      - targets: ["3.35.151.233:9100"]
         labels:
           instance: "policy-pass-api"
 
