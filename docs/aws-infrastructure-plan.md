@@ -2,7 +2,7 @@
 
 > **최종 수정일**: 2026-05-17  
 > **담당자**: Daehyun Kim (인프라)  
-> **관련 문서**: [멀티클라우드 아키텍처 정리본](../multicloud_architecture_summary.md)
+> **관련 문서**: [멀티클라우드 아키텍처 정리본](./multicloud_architecture_summary.md)
 
 ---
 
@@ -110,11 +110,19 @@ GCP Airflow → GCS → AWS DataSync → S3 (Index Bucket) → EC2 (BE)
 
 #### 6. 모니터링 흐름
 
-**EC2 (Monitoring)** 에서 Prometheus + Grafana를 운영한다.
-개발자는 Grafana 대시보드를 통해 서비스 상태, ETL 상태, 인프라 상태를 확인한다.
+**EC2 (Monitoring)** 에서 Prometheus + Grafana + Node Exporter 스택을 Docker Compose로 운영한다.
+Prometheus가 AWS EC2 2대 + GCP VM 2대(MongoDB, Airflow)의 Node Exporter 메트릭과 API `/metrics`를 크로스 클라우드로 수집하고, Grafana가 시각화한다.
 
 ```
-Developer → Monitoring Dashboard (Grafana)
+[AWS]
+EC2 (API)     ──[8080: /metrics]──→ Prometheus ──→ Grafana ←── Developer
+EC2 (API)     ──[9100: node]──────→ Prometheus
+EC2 (Monitor) ──[9100: node]──────→ Prometheus
+
+[GCP → AWS cross-cloud scraping]
+GCP MongoDB VM  ──[9216: mongodb-exporter]──→ Prometheus
+GCP MongoDB VM  ──[9100: node-exporter]─────→ Prometheus
+GCP Airflow VM  ──[9100: node-exporter]─────→ Prometheus
 ```
 
 ---
@@ -161,12 +169,13 @@ Developer → Monitoring Dashboard (Grafana)
 | 9 | `09-setup-cloudfront.sh` | S3 버킷 + CloudFront Distribution (프론트엔드 호스팅) |
 | 10 | `toggle-instances.sh` | EC2 인스턴스 시작/중지 (비용 절감) |
 
-### 3.2 CI/CD 워크플로우 (`.github/workflows/aws/`)
+### 3.2 CI/CD 워크플로우 (`.github/workflows/`)
 
 | 파일명 | 역할 |
 |--------|------|
 | `deploy-api.yml` | API Docker build → ECR push → SSH deploy to EC2. 트리거: main 푸시 + repository_dispatch |
 | `deploy-ui.yml` | `vite build` → S3 sync → CloudFront invalidation. 트리거: main 푸시 |
+| `deploy-monitoring.yml` | monitoring/ SCP → Monitor EC2, docker-compose 재시작. 트리거: main 푸시 (monitoring/**) |
 
 ### 3.3 애플리케이션 (`services/`)
 
@@ -477,6 +486,16 @@ app.add_middleware(
 4. aws cloudfront create-invalidation --paths "/*"
 ```
 
+#### 모니터링 배포
+
+```
+트리거: push to main (monitoring/**) 또는 workflow_dispatch
+파이프라인:
+1. SCP: monitoring/ 디렉토리 전체를 Monitor EC2로 복사
+2. SSH: docker-compose pull + up -d --force-recreate
+필요 시크릿: EC2_MONITOR_HOST (3.36.217.53), EC2_SSH_KEY
+```
+
 #### 크로스 레포 배포
 
 ```
@@ -495,6 +514,131 @@ GCP Airflow DAG → GitHub API (repository_dispatch) → AWS 레포 워크플로
 알람 4: policy-pass-monitor-status-check (상태 체크 실패)
 (선택) SNS 토픽을 연결하여 이메일 알림 가능
 ```
+
+### 4.10 Prometheus + Grafana 모니터링 스택 (Phase E) ✅ 완료
+
+> **구축일**: 2026-05-17  
+> **서버**: EC2 `policy-pass-monitor` (3.35.247.34)  
+> **CI/CD**: `.github/workflows/deploy-monitoring.yml`
+
+Monitor EC2에서 Docker Compose로 Prometheus + Grafana + Node Exporter를 운영한다.
+CloudWatch가 기본 인프라 알람을 담당하고, Prometheus + Grafana가 상세 메트릭 수집과 시각화를 담당한다.
+AWS 인스턴스뿐 아니라 GCP VM(MongoDB, Airflow)의 시스템 메트릭도 크로스 클라우드로 수집한다.
+
+#### 스택 구성
+
+```
+monitoring/
+├── docker-compose.yml                          # 컨테이너 오케스트레이션
+├── prometheus.yml                              # scrape 설정 (AWS + GCP 타겟)
+└── grafana/
+    ├── provisioning/
+    │   ├── datasources/
+    │   │   └── datasources.yaml                # Prometheus 데이터소스
+    │   └── dashboards/
+    │       └── dashboards.yaml                 # 대시보드 자동 로드
+    └── dashboards/
+        ├── node-exporter-full.json             # 시스템 메트릭 (AWS 2대 + GCP 2대, 총 4대 VM)
+        ├── api-overview.json                   # API 서버 HTTP 메트릭
+        └── mongodb-exporter.json               # MongoDB 메트릭 (GCP MongoDB VM)
+```
+
+#### Docker Compose 서비스
+
+| 서비스 | 이미지 | 포트 | 역할 |
+|--------|--------|------|------|
+| prometheus | prom/prometheus:latest | 9090 | 메트릭 수집 및 저장 (30일 보관, Admin API 활성화) |
+| grafana | grafana/grafana:latest | 3000 | 대시보드 시각화 |
+| node-exporter | prom/node-exporter:latest | 9100 | Monitor EC2 시스템 메트릭 |
+
+- Grafana 비밀번호: `${GRAFANA_PASSWORD:-policypass2026}`
+- 볼륨: `prometheus_data`, `grafana_data` (Named volumes, 컨테이너 재시작 시 데이터 유지)
+- Prometheus 설정: `--storage.tsdb.retention.time=30d`, `--web.enable-admin-api`
+
+#### Prometheus Scrape 타겟
+
+인스턴스당 1개 Job으로 구성. 같은 서버의 여러 exporter는 하나의 Job에 통합.
+
+| Job | 타겟 | 설명 |
+|-----|------|------|
+| `prometheus` | localhost:9090 | Prometheus 자체 메트릭 |
+| `aws-api` | 3.35.151.233:8080 (app), :9100 (node) | AWS API 서버 — 앱 메트릭 + 시스템 메트릭 |
+| `aws-monitor` | node-exporter:9100 | AWS 모니터 서버 시스템 메트릭 |
+| `gcp-mongodb` | 34.47.80.98:9216 (mongodb), :9100 (node) | GCP MongoDB VM — DB exporter + 시스템 메트릭 |
+| `gcp-airflow` | 34.47.107.145:9100 | GCP Airflow VM 시스템 메트릭 |
+
+> **크로스 클라우드 스크래핑**: AWS Monitor EC2(3.35.247.34)에서 GCP VM의 외부 IP로 직접 Prometheus pull. GCP 방화벽에서 포트 9100, 9216을 AWS Monitor IP(3.35.247.34/32)에만 허용.
+
+> **API `/metrics` 엔드포인트**: FastAPI 코드(BE repo)에 `prometheus-fastapi-instrumentator` 미들웨어 추가 필요. 미설정 시 API 대시보드 데이터 없음.
+
+#### GCP 방화벽 규칙
+
+GCP VM에서 AWS Prometheus의 스크래핑을 허용하기 위해 아래 방화벽 규칙을 생성:
+
+| 규칙 이름 | 포트 | 소스 | 대상 태그 |
+|-----------|------|------|-----------|
+| `allow-node-exporter-from-aws` | tcp:9100, tcp:9216 | 3.35.247.34/32 | `mongo-server` |
+| `allow-node-exporter-airflow-from-aws` | tcp:9100 | 3.35.247.34/32 | `airflow-server` |
+
+#### GCP VM Node Exporter 설치
+
+**MongoDB VM (34.47.80.98)**: Docker 컨테이너로 실행 (기존 구축)
+
+**Airflow VM (34.47.107.145)**: systemd 서비스로 실행
+
+```bash
+# /usr/local/bin/node_exporter 바이너리 설치
+# systemd 서비스: /etc/systemd/system/node_exporter.service
+sudo systemctl enable --now node_exporter
+```
+
+#### Grafana 데이터소스
+
+| 데이터소스 | 타입 | URL / 설정 | 용도 |
+|------------|------|-----------|------|
+| Prometheus | prometheus | http://prometheus:9090 (기본값) | 모든 메트릭 (AWS + GCP) |
+| Google Cloud Monitoring | stackdriver | GCP SA JWT 인증 (프로젝트: `rag-qna-eval`) | GCP 전용 메트릭 (Grafana API로 등록) |
+
+- Prometheus: 파일 프로비저닝 (`datasources.yaml`)
+- Google Cloud Monitoring: Grafana REST API로 등록 (SA 키 파일 `~/grafana-gcp-sa-key.json`에서 읽어 주입)
+
+#### Grafana 대시보드
+
+| 대시보드 | 데이터소스 | 주요 패널 |
+|----------|-----------|-----------|
+| Node Exporter Full | Prometheus | CPU, 메모리, 디스크 I/O, 네트워크, 파일시스템 (4대 VM 드롭다운 선택) |
+| API Overview | Prometheus | HTTP 요청 수/초, 응답 시간 (p50/p95/p99), 에러율, 활성 요청 수 |
+| MongoDB Exporter | Prometheus | DB 연결 수, 메모리, WiredTiger 캐시, 쿼리 성능, Replication lag |
+
+> Node Exporter Full 대시보드에서 Job 드롭다운(`aws-api`, `aws-monitor`, `gcp-mongodb`, `gcp-airflow`)으로 각 VM을 개별 조회 가능.
+
+#### Security Group / 방화벽
+
+**AWS — policy-pass-api-sg 추가 규칙:**
+
+| 방향 | 포트 | 소스 | 설명 |
+|------|------|------|------|
+| Inbound | 9100 | 3.35.247.34/32 | Node Exporter (Monitor EC2에서만 접근) |
+
+**GCP — 방화벽 규칙 (위 GCP 방화벽 규칙 섹션 참조)**
+
+#### CI/CD: deploy-monitoring.yml
+
+```
+트리거: push to main (monitoring/**) 또는 workflow_dispatch
+파이프라인:
+1. SCP: monitoring/ 전체를 Monitor EC2로 복사
+2. SSH: cd ~/monitoring && docker-compose pull && docker-compose up -d --force-recreate
+필요 시크릿: EC2_MONITOR_HOST, EC2_SSH_KEY
+```
+
+#### 접속 정보
+
+| 서비스 | URL | 인증 |
+|--------|-----|------|
+| Grafana | http://3.35.247.34:3000 | admin / policypass2026 |
+| Prometheus | http://3.35.247.34:9090 | 없음 (SG로 접근 제한) |
+| Prometheus Targets | http://3.35.247.34:9090/targets | 타겟 UP/DOWN 상태 확인 |
 
 ---
 
@@ -580,7 +724,10 @@ Utility:
 | API 연동 | 브라우저에서 검색 실행 | CORS 에러 없이 API 응답 수신 |
 | CI/CD API | `services/api/` 변경 push → ECR 이미지 확인 → EC2 배포 | 자동 배포 성공 |
 | CI/CD UI | `services/ui/` 변경 push → S3 동기화 → CloudFront 무효화 | 자동 배포 성공 |
-| 모니터링 | `aws cloudwatch describe-alarms --alarm-name-prefix rag-qa` | 알람 설정 확인 |
+| CloudWatch | `aws cloudwatch describe-alarms --alarm-name-prefix rag-qa` | 알람 설정 확인 |
+| Prometheus | `http://3.36.217.53:9090/targets` 접속 | 모든 타겟 UP 상태 |
+| Grafana | `http://3.36.217.53:3000` 접속 (admin/policypass2026) | 대시보드 4개 표시 |
+| Node Exporter | Grafana Node Exporter Full 대시보드 | 양 EC2(api, monitor) 메트릭 표시 |
 | E2E | UI에서 정책 질문 → RAG 응답 확인 | 정책 데이터 기반 답변 |
 
 ---

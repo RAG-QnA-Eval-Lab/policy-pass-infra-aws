@@ -43,7 +43,7 @@
         "title": "MongoDB Status",
         "type": "stat",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_up{job=\"mongodb\"}", "legendFormat": "", "refId": "A" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_up{job=\"gcp-mongodb\"}", "legendFormat": "", "refId": "A" }
         ]
       },
       {
@@ -62,7 +62,7 @@
         "title": "Uptime",
         "type": "stat",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_uptime{job=\"mongodb\"}", "legendFormat": "", "refId": "A" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_uptime{job=\"gcp-mongodb\"}", "legendFormat": "", "refId": "A" }
         ]
       },
       {
@@ -80,7 +80,7 @@
         "title": "Current Connections",
         "type": "stat",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"current\",job=\"mongodb\"}", "legendFormat": "", "refId": "A" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"current\",job=\"gcp-mongodb\"}", "legendFormat": "", "refId": "A" }
         ]
       },
       {
@@ -98,7 +98,7 @@
         "title": "Available Connections",
         "type": "stat",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"available\",job=\"mongodb\"}", "legendFormat": "", "refId": "A" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"available\",job=\"gcp-mongodb\"}", "legendFormat": "", "refId": "A" }
         ]
       },
       {
@@ -117,7 +117,7 @@
         "title": "Resident Memory",
         "type": "stat",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_mem_resident{job=\"mongodb\"} * 1024 * 1024", "legendFormat": "", "refId": "A" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_mem_resident{job=\"gcp-mongodb\"} * 1024 * 1024", "legendFormat": "", "refId": "A" }
         ]
       },
       {
@@ -136,7 +136,7 @@
         "title": "Virtual Memory",
         "type": "stat",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_mem_virtual{job=\"mongodb\"} * 1024 * 1024", "legendFormat": "", "refId": "A" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_mem_virtual{job=\"gcp-mongodb\"} * 1024 * 1024", "legendFormat": "", "refId": "A" }
         ]
       },
       {
@@ -154,7 +154,7 @@
         "title": "Total Created",
         "type": "stat",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"totalCreated\",job=\"mongodb\"}", "legendFormat": "", "refId": "A" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"totalCreated\",job=\"gcp-mongodb\"}", "legendFormat": "", "refId": "A" }
         ]
       },
       {
@@ -172,7 +172,7 @@
         "title": "Active Connections",
         "type": "stat",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"active\",job=\"mongodb\"}", "legendFormat": "", "refId": "A" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"active\",job=\"gcp-mongodb\"}", "legendFormat": "", "refId": "A" }
         ]
       },
       {
@@ -204,7 +204,7 @@
         "title": "Operations per Second",
         "type": "timeseries",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_opcounters{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "{{legacy_op_type}}", "refId": "A" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_opcounters{job=\"gcp-mongodb\"}[$__rate_interval])", "legendFormat": "{{legacy_op_type}}", "refId": "A" }
         ]
       },
       {
@@ -229,7 +229,7 @@
         "title": "Document Operations per Second",
         "type": "timeseries",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_metrics_document{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "{{doc_op_type}}", "refId": "A" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_metrics_document{job=\"gcp-mongodb\"}[$__rate_interval])", "legendFormat": "{{doc_op_type}}", "refId": "A" }
         ]
       },
       {
@@ -260,9 +260,9 @@
         "title": "Connections Over Time",
         "type": "timeseries",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"current\",job=\"mongodb\"}", "legendFormat": "Current", "refId": "A" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"active\",job=\"mongodb\"}", "legendFormat": "Active", "refId": "B" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"available\",job=\"mongodb\"}", "legendFormat": "Available", "refId": "C" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"current\",job=\"gcp-mongodb\"}", "legendFormat": "Current", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"active\",job=\"gcp-mongodb\"}", "legendFormat": "Active", "refId": "B" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_connections{conn_type=\"available\",job=\"gcp-mongodb\"}", "legendFormat": "Available", "refId": "C" }
         ]
       },
       {
@@ -286,9 +286,9 @@
         "title": "Open Cursors",
         "type": "timeseries",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_metrics_cursor_open{csr_type=\"total\",job=\"mongodb\"}", "legendFormat": "Total Open", "refId": "A" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_metrics_cursor_open{csr_type=\"noTimeout\",job=\"mongodb\"}", "legendFormat": "No Timeout", "refId": "B" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_metrics_cursor_open{csr_type=\"pinned\",job=\"mongodb\"}", "legendFormat": "Pinned", "refId": "C" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_metrics_cursor_open{csr_type=\"total\",job=\"gcp-mongodb\"}", "legendFormat": "Total Open", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_metrics_cursor_open{csr_type=\"noTimeout\",job=\"gcp-mongodb\"}", "legendFormat": "No Timeout", "refId": "B" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_metrics_cursor_open{csr_type=\"pinned\",job=\"gcp-mongodb\"}", "legendFormat": "Pinned", "refId": "C" }
         ]
       },
       {
@@ -320,8 +320,8 @@
         "title": "Memory Usage",
         "type": "timeseries",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_mem_resident{job=\"mongodb\"}", "legendFormat": "Resident", "refId": "A" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_mem_virtual{job=\"mongodb\"}", "legendFormat": "Virtual", "refId": "B" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_mem_resident{job=\"gcp-mongodb\"}", "legendFormat": "Resident", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_mem_virtual{job=\"gcp-mongodb\"}", "legendFormat": "Virtual", "refId": "B" }
         ]
       },
       {
@@ -346,8 +346,8 @@
         "title": "Network I/O",
         "type": "timeseries",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_network_bytesIn{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Bytes In", "refId": "A" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_network_bytesOut{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Bytes Out", "refId": "B" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_network_bytesIn{job=\"gcp-mongodb\"}[$__rate_interval])", "legendFormat": "Bytes In", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_network_bytesOut{job=\"gcp-mongodb\"}[$__rate_interval])", "legendFormat": "Bytes Out", "refId": "B" }
         ]
       },
       {
@@ -379,9 +379,9 @@
         "title": "WiredTiger Cache",
         "type": "timeseries",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_wt_cache_bytes_currently_in_the_cache{job=\"mongodb\"}", "legendFormat": "In Cache", "refId": "A" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_wt_cache_maximum_bytes_configured{job=\"mongodb\"}", "legendFormat": "Max Configured", "refId": "B" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_wt_cache_tracked_dirty_bytes_in_the_cache{job=\"mongodb\"}", "legendFormat": "Dirty", "refId": "C" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_wt_cache_bytes_currently_in_the_cache{job=\"gcp-mongodb\"}", "legendFormat": "In Cache", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_wt_cache_maximum_bytes_configured{job=\"gcp-mongodb\"}", "legendFormat": "Max Configured", "refId": "B" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_wt_cache_tracked_dirty_bytes_in_the_cache{job=\"gcp-mongodb\"}", "legendFormat": "Dirty", "refId": "C" }
         ]
       },
       {
@@ -406,7 +406,7 @@
         "title": "Page Faults",
         "type": "timeseries",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_extra_info_page_faults{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Page Faults/s", "refId": "A" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_extra_info_page_faults{job=\"gcp-mongodb\"}[$__rate_interval])", "legendFormat": "Page Faults/s", "refId": "A" }
         ]
       },
       {
@@ -431,10 +431,10 @@
         "title": "Asserts per Second",
         "type": "timeseries",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_asserts{assert_type=\"regular\",job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Regular", "refId": "A" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_asserts{assert_type=\"warning\",job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Warning", "refId": "B" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_asserts{assert_type=\"msg\",job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Message", "refId": "C" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_asserts{assert_type=\"user\",job=\"mongodb\"}[$__rate_interval])", "legendFormat": "User", "refId": "D" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_asserts{assert_type=\"regular\",job=\"gcp-mongodb\"}[$__rate_interval])", "legendFormat": "Regular", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_asserts{assert_type=\"warning\",job=\"gcp-mongodb\"}[$__rate_interval])", "legendFormat": "Warning", "refId": "B" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_asserts{assert_type=\"msg\",job=\"gcp-mongodb\"}[$__rate_interval])", "legendFormat": "Message", "refId": "C" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_asserts{assert_type=\"user\",job=\"gcp-mongodb\"}[$__rate_interval])", "legendFormat": "User", "refId": "D" }
         ]
       },
       {
@@ -466,8 +466,8 @@
         "title": "Query Executor Scanned",
         "type": "timeseries",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_metrics_queryExecutor_scanned{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Keys Scanned/s", "refId": "A" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_metrics_queryExecutor_scannedObjects{job=\"mongodb\"}[$__rate_interval])", "legendFormat": "Objects Scanned/s", "refId": "B" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_metrics_queryExecutor_scanned{job=\"gcp-mongodb\"}[$__rate_interval])", "legendFormat": "Keys Scanned/s", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "rate(mongodb_ss_metrics_queryExecutor_scannedObjects{job=\"gcp-mongodb\"}[$__rate_interval])", "legendFormat": "Objects Scanned/s", "refId": "B" }
         ]
       },
       {
@@ -492,8 +492,8 @@
         "title": "Global Lock Queue",
         "type": "timeseries",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_currentQueue{count_type=\"readers\",job=\"mongodb\"}", "legendFormat": "Readers", "refId": "A" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_currentQueue{count_type=\"writers\",job=\"mongodb\"}", "legendFormat": "Writers", "refId": "B" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_currentQueue{count_type=\"readers\",job=\"gcp-mongodb\"}", "legendFormat": "Readers", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_currentQueue{count_type=\"writers\",job=\"gcp-mongodb\"}", "legendFormat": "Writers", "refId": "B" }
         ]
       },
       {
@@ -518,9 +518,9 @@
         "title": "Active Clients",
         "type": "timeseries",
         "targets": [
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_activeClients{count_type=\"readers\",job=\"mongodb\"}", "legendFormat": "Readers", "refId": "A" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_activeClients{count_type=\"writers\",job=\"mongodb\"}", "legendFormat": "Writers", "refId": "B" },
-          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_activeClients{count_type=\"total\",job=\"mongodb\"}", "legendFormat": "Total", "refId": "C" }
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_activeClients{count_type=\"readers\",job=\"gcp-mongodb\"}", "legendFormat": "Readers", "refId": "A" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_activeClients{count_type=\"writers\",job=\"gcp-mongodb\"}", "legendFormat": "Writers", "refId": "B" },
+          { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "mongodb_ss_globalLock_activeClients{count_type=\"total\",job=\"gcp-mongodb\"}", "legendFormat": "Total", "refId": "C" }
         ]
       }
     ],

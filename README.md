@@ -25,6 +25,7 @@ AWS(Online Serving)에서 인덱스를 로드하여 실시간 검색, LLM 응답
 | **DataSync** | GCS → S3 | `task-0981d5902107c4cb5` |
 | **SSM** | 시크릿 관리 | `/rag-qa/*` (8 params) |
 | **CloudWatch** | 알람 | CPU high (2) + Status check (2) |
+| **Monitoring** | Prometheus + Grafana | http://3.36.217.53 (9090/3000) |
 
 ## Quick Start
 
@@ -78,6 +79,7 @@ graph LR
         A[push to main<br/>services/api/**]
         B[push to main<br/>services/ui/**]
         C[repository_dispatch<br/>from GCP Airflow]
+        M[push to main<br/>monitoring/**]
     end
 
     subgraph API["deploy-api.yml"]
@@ -88,9 +90,14 @@ graph LR
         G[npm build] --> H[S3 Sync] --> I[CloudFront Invalidate]
     end
 
+    subgraph MON["deploy-monitoring.yml"]
+        J[SCP configs] --> K[docker-compose restart]
+    end
+
     A --> D
     C --> D
     B --> G
+    M --> J
 ```
 
 ### GitHub Secrets
@@ -105,7 +112,33 @@ graph LR
 | `UI_S3_BUCKET` | UI S3 버킷명 |
 | `CLOUDFRONT_DISTRIBUTION_ID` | CloudFront 배포 ID |
 | `API_BASE_URL` | API 엔드포인트 URL |
+| `EC2_MONITOR_HOST` | Monitor EC2 EIP |
 | `GEMINI_API_KEY` | AI 코드 리뷰용 |
+
+## Monitoring
+
+EC2 `policy-pass-monitor`에서 Docker Compose로 운영:
+
+| 서비스 | 포트 | 역할 |
+|--------|------|------|
+| Prometheus | 9090 | 메트릭 수집 (API + Node Exporter) |
+| Grafana | 3000 | 대시보드 (admin / policypass2026) |
+| Node Exporter | 9100 | 시스템 메트릭 (양 EC2) |
+
+**대시보드**: Node Exporter Full, API Overview, GCP Overview, MongoDB Exporter
+
+**데이터소스**: Prometheus (기본) + Google Cloud Monitoring (GCP SA 키 필요)
+
+```
+monitoring/
+├── docker-compose.yml
+├── prometheus.yml
+└── grafana/
+    ├── provisioning/
+    │   ├── datasources/datasources.yaml
+    │   └── dashboards/dashboards.yaml
+    └── dashboards/*.json
+```
 
 ## FAISS 인덱스 플로우
 
@@ -148,10 +181,14 @@ policy-pass-infra-aws/
 ├── services/
 │   ├── api/                    # API 컨테이너 (Dockerfile, .env.example)
 │   └── ui/                     # UI 빌드 설정 (package.json)
-├── monitoring/                 # Prometheus + Grafana docker-compose
-├── docs/                       # 인프라 계획서, 콘솔 가이드
+├── monitoring/                 # Prometheus + Grafana + Node Exporter
+│   ├── docker-compose.yml
+│   ├── prometheus.yml
+│   └── grafana/                # provisioning + dashboards
+├── docs/                       # 인프라 계획서, 콘솔 가이드, 아키텍처
 ├── .github/workflows/
 │   ├── aws/                    # API/UI 배포 워크플로우
+│   ├── deploy-monitoring.yml   # 모니터링 스택 배포
 │   └── pr-agent.yml            # Gemini AI 코드 리뷰
 └── .pr_agent.toml              # AI 리뷰 설정
 ```
@@ -166,6 +203,8 @@ policy-pass-infra-aws/
 
 ## 문서
 
-- [AWS Infrastructure Plan](docs/aws-infrastructure-plan.md) — 상세 아키텍처 결정사항
-- [AWS Console Guide](docs/aws-console-guide.md) — 콘솔 설정 가이드
-- [Multicloud Architecture](docs/multicloud_architecture_summary.md) — GCP/AWS 역할 분담
+| 문서 | 설명 |
+|------|------|
+| [AWS Infrastructure Plan](docs/aws-infrastructure-plan.md) | 인프라 아키텍처, 리소스 상세, 모니터링 스택, 비용 |
+| [AWS Console Guide](docs/aws-console-guide.md) | AWS 콘솔 기반 인프라 구축 스텝바이스텝 |
+| [Multicloud Architecture](docs/multicloud_architecture_summary.md) | GCP/AWS 역할 분담 의사결정 |
