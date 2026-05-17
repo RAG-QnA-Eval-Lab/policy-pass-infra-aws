@@ -53,7 +53,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "expr": "sum(rate(http_requests_total{job=\"policy-pass-api\"}[5m])) by (status)",
+          "expr": "sum(rate(http_requests_total{job=\"aws-api\"}[5m])) by (status)",
           "legendFormat": "{{status}}",
           "refId": "A"
         }
@@ -86,19 +86,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"policy-pass-api\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"aws-api\"}[5m])) by (le))",
           "legendFormat": "p50",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"policy-pass-api\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"aws-api\"}[5m])) by (le))",
           "legendFormat": "p95",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"policy-pass-api\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"aws-api\"}[5m])) by (le))",
           "legendFormat": "p99",
           "refId": "C"
         }
@@ -140,7 +140,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "expr": "sum(rate(http_requests_total{job=\"policy-pass-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"policy-pass-api\"}[5m])) * 100",
+          "expr": "sum(rate(http_requests_total{job=\"aws-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"aws-api\"}[5m])) * 100",
           "legendFormat": "5xx rate",
           "refId": "A"
         }
@@ -174,7 +174,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "expr": "sum(http_requests_in_progress{job=\"policy-pass-api\"})",
+          "expr": "sum(http_requests_in_progress{job=\"aws-api\"})",
           "legendFormat": "in-progress",
           "refId": "A"
         }
@@ -209,7 +209,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "expr": "sum(rate(http_request_duration_seconds_sum{job=\"policy-pass-api\"}[5m])) / sum(rate(http_request_duration_seconds_count{job=\"policy-pass-api\"}[5m]))",
+          "expr": "sum(rate(http_request_duration_seconds_sum{job=\"aws-api\"}[5m])) / sum(rate(http_request_duration_seconds_count{job=\"aws-api\"}[5m]))",
           "legendFormat": "avg",
           "refId": "A"
         }
@@ -249,7 +249,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "expr": "sum(rate(http_requests_total{job=\"policy-pass-api\"}[5m])) by (handler)",
+          "expr": "sum(rate(http_requests_total{job=\"aws-api\"}[5m])) by (handler)",
           "legendFormat": "{{handler}}",
           "refId": "A"
         }
