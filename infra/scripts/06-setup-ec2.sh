@@ -177,7 +177,7 @@ usermod -aG docker ec2-user
 cat > /home/ec2-user/deploy.sh << 'DEPLOY'
 #!/bin/bash
 REGION=ap-northeast-2
-ACCOUNT_ID=$(curl -s http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info | grep AccountId | cut -d'"' -f4)
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text --region ${REGION})
 ECR_REGISTRY=${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
 IMAGE=${ECR_REGISTRY}/rag-api:latest
 
